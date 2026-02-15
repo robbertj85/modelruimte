@@ -141,6 +141,15 @@ export default function WebappLayout({
       }));
   }, [state.results]);
 
+  // Overall service level curve data (total space vs service level)
+  const serviceLevelCurveData = useMemo(() => {
+    if (!state.results) return [];
+    return state.results.serviceLevelCurve.map((pt) => ({
+      serviceLevel: Math.round(pt.serviceLevel * 100),
+      space: Math.round(pt.space),
+    }));
+  }, [state.results]);
+
   // Service level curve data per cluster
   const clusterServiceLevelCurves = useMemo(() => {
     if (!state.results) return {};
@@ -158,7 +167,7 @@ export default function WebappLayout({
   const tabs: { id: WebappTab; label: string; icon: React.ReactNode }[] = [
     { id: 'cover', label: 'Info', icon: <Info size={18} /> },
     { id: 'handleiding', label: 'Handleiding', icon: <BookOpen size={18} /> },
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+    { id: 'dashboard', label: 'Cockpit', icon: <LayoutDashboard size={18} /> },
     { id: 'invoer', label: 'Invoer', icon: <ClipboardList size={18} /> },
     { id: 'parameters', label: 'Parameters', icon: <Settings size={18} /> },
     { id: 'clustering', label: 'Clustering', icon: <Network size={18} /> },
@@ -579,12 +588,6 @@ export default function WebappLayout({
                   value={state.results ? `${Math.round(state.results.totalSpaceM2 * LOADING_BAY_WIDTH_M * 10) / 10}` : '--'}
                   unit="m²"
                   accent={DMI.themeLogistics}
-                />
-                <KpiCard
-                  label="Actieve Clusters"
-                  value={clusterCount}
-                  unit={`van ${MAX_CLUSTERS}`}
-                  accent={DMI.themeMobility}
                 />
               </div>
 
@@ -1507,17 +1510,18 @@ export default function WebappLayout({
                   <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: '24px' }}>
                     {/* Arrivals chart */}
                     <WCard title="Aankomsten per Voertuigtype">
-                      <div style={{ height: 300 }}>
+                      <div style={{ height: 360 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={vehicleArrivalData} margin={{ left: 8, right: 8, top: 8, bottom: 60 }}>
+                          <BarChart data={vehicleArrivalData} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
                             <XAxis
                               dataKey="name"
                               tick={TICK_SM}
-                              angle={-35}
+                              angle={-45}
                               textAnchor="end"
                               interval={0}
-                              height={80}
+                              height={140}
+                              tickMargin={15}
                             />
                             <YAxis tick={TICK_MD} />
                             <RechartsTooltip
@@ -1536,17 +1540,18 @@ export default function WebappLayout({
 
                     {/* Required length chart */}
                     <WCard title="Benodigde Lengte per Voertuigtype">
-                      <div style={{ height: 300 }}>
+                      <div style={{ height: 360 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={vehicleLengthData} margin={{ left: 8, right: 8, top: 8, bottom: 60 }}>
+                          <BarChart data={vehicleLengthData} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
                             <XAxis
                               dataKey="name"
                               tick={TICK_SM}
-                              angle={-35}
+                              angle={-45}
                               textAnchor="end"
                               interval={0}
-                              height={80}
+                              height={140}
+                              tickMargin={15}
                             />
                             <YAxis tick={TICK_MD} unit=" m" />
                             <RechartsTooltip
@@ -2044,6 +2049,42 @@ export default function WebappLayout({
                       </div>
                     </div>
                   </WCard>
+
+                  {/* Overall Service Level Curve */}
+                  {serviceLevelCurveData.length > 0 && (
+                    <WCard title="Totale Ruimte vs Service Level">
+                      <div style={{ height: 280 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={serviceLevelCurveData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
+                            <XAxis
+                              dataKey="serviceLevel"
+                              tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                              axisLine={{ stroke: DMI.blueTint2 }}
+                              label={{ value: 'Service Level (%)', position: 'insideBottom', offset: -5, style: { fontSize: 10, fill: DMI.darkGray } }}
+                            />
+                            <YAxis
+                              tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                              axisLine={{ stroke: DMI.blueTint2 }}
+                              label={{ value: 'Ruimte (m)', angle: -90, position: 'insideLeft', offset: 0, style: { fontSize: 10, fill: DMI.darkGray } }}
+                            />
+                            <RechartsTooltip
+                              formatter={(value) => [`${Number(value).toLocaleString('nl-NL')} m`, 'Totale ruimte']}
+                              labelFormatter={(label) => `SL: ${label}%`}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="space"
+                              stroke={DMI.mediumBlue}
+                              strokeWidth={2.5}
+                              dot={{ r: 0 }}
+                              activeDot={{ r: 4, fill: DMI.mediumBlue }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </WCard>
+                  )}
                 </>
               )}
             </div>
