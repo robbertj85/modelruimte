@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Slider } from '@/components/ui/slider';
-import { VEHICLES, FUNCTIONS } from '@/lib/model-data';
+import { VEHICLES, FUNCTIONS, LOADING_BAY_WIDTH_M } from '@/lib/model-data';
 import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
 import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
@@ -28,7 +28,6 @@ import {
   PERIOD_COLORS,
   FUNCTION_COLORS,
   CLUSTER_COLORS,
-  CLUSTER_NAMES,
   SERVICE_LEVEL_OPTIONS,
   MAX_CLUSTERS,
   heading,
@@ -48,6 +47,8 @@ import {
   PieChart,
   Pie,
   Legend,
+  LineChart,
+  Line,
 } from 'recharts';
 
 // ---------------------------------------------------------------------------
@@ -232,10 +233,24 @@ export default function DmiCockpitLayout({
   const clusterSpaceData = useMemo(() => {
     if (!state.results) return [];
     return state.results.clusterResults.map((cr) => ({
-      name: `Cluster ${cr.clusterId}${CLUSTER_NAMES[cr.clusterId] ? ` - ${CLUSTER_NAMES[cr.clusterId]}` : ''}`,
+      name: state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`,
       space: Math.round(cr.totalSpaceM2),
       clusterId: cr.clusterId,
     }));
+  }, [state.results, state.clusterNames]);
+
+  // Service level curve data per cluster
+  const clusterServiceLevelCurves = useMemo(() => {
+    if (!state.results) return {};
+    const curves: Record<number, { serviceLevel: number; vehicles: number }[]> = {};
+    for (const cr of state.results.clusterResults) {
+      const points: { serviceLevel: number; vehicles: number }[] = [];
+      for (const slKey of Object.keys(cr.maxVehiclesPerServiceLevel).sort((a, b) => Number(a) - Number(b))) {
+        points.push({ serviceLevel: Number(slKey), vehicles: cr.maxVehiclesPerServiceLevel[Number(slKey)] });
+      }
+      curves[cr.clusterId] = points;
+    }
+    return curves;
   }, [state.results]);
 
   // Max horizontal bar value for function inputs visualization
@@ -557,12 +572,32 @@ export default function DmiCockpitLayout({
 
             {handleidingSubTab === 'casus' && (
               <>
-                <p style={{ ...bodyText, fontSize: '0.95rem', color: DMI.mediumBlue, marginBottom: '8px' }}>
-                  {CASUS_GERARD_DOUSTRAAT.subtitle}
-                </p>
-                <p style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '24px', color: DMI.darkGray }}>
-                  {CASUS_GERARD_DOUSTRAAT.intro}
-                </p>
+                <div
+                  style={{
+                    backgroundColor: DMI.white,
+                    borderRadius: '8px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                    overflow: 'hidden',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: '12px 20px',
+                      borderBottom: `2px solid ${DMI.blueTint2}`,
+                      backgroundColor: DMI.blueTint3,
+                    }}
+                  >
+                    <h3 style={{ ...heading, fontSize: '1rem', margin: 0 }}>
+                      {CASUS_GERARD_DOUSTRAAT.subtitle}
+                    </h3>
+                  </div>
+                  <div style={{ padding: '20px' }}>
+                    <p style={{ ...bodyText, fontSize: '0.85rem', lineHeight: 1.7, margin: 0, color: DMI.darkGray }}>
+                      {CASUS_GERARD_DOUSTRAAT.intro}
+                    </p>
+                  </div>
+                </div>
 
                 {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
                   <div
@@ -588,10 +623,12 @@ export default function DmiCockpitLayout({
                     ))}
                     {section.images && section.images.map((img, iIdx) => (
                       <figure key={iIdx} style={{ margin: '12px 0 0 0' }}>
-                        <img
+                        <Image
                           src={img.src}
                           alt={img.alt}
-                          style={{ width: '100%', borderRadius: '6px', border: `1px solid ${DMI.blueTint2}` }}
+                          width={1200}
+                          height={675}
+                          style={{ width: '100%', height: 'auto', borderRadius: '6px', border: `1px solid ${DMI.blueTint2}` }}
                         />
                         {img.caption && (
                           <figcaption style={{ ...bodyText, fontSize: '0.7rem', color: DMI.darkGray, marginTop: '6px', fontStyle: 'italic' }}>
@@ -745,7 +782,7 @@ export default function DmiCockpitLayout({
           {/* KPI 5: Required Area */}
           <KpiCard
             label="Benodigde Oppervlakte Laden & Lossen"
-            value={state.results ? Math.round(state.results.totalSpaceM2 * 3).toLocaleString('nl-NL') : '--'}
+            value={state.results ? Math.round(state.results.totalSpaceM2 * LOADING_BAY_WIDTH_M).toLocaleString('nl-NL') : '--'}
             suffix="m&sup2;"
           />
         </div>
@@ -1210,6 +1247,22 @@ export default function DmiCockpitLayout({
                       <span style={{ ...bodyText, fontSize: '0.7rem', fontWeight: 600 }}>
                         C{cid}:
                       </span>
+                      <input
+                        type="text"
+                        placeholder="Naam..."
+                        value={state.clusterNames[cid] || ''}
+                        onChange={(e) => state.handleClusterNameChange(cid, e.target.value)}
+                        style={{
+                          padding: '2px 4px',
+                          border: `1px solid ${DMI.blueTint2}`,
+                          borderRadius: '3px',
+                          fontSize: '0.65rem',
+                          color: DMI.darkBlue,
+                          fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                          backgroundColor: DMI.white,
+                          width: '80px',
+                        }}
+                      />
                       <select
                         value={String(state.clusterServiceLevels[cid] ?? 0.95)}
                         onChange={(e) => state.handleServiceLevelChange(cid, e.target.value)}
@@ -1302,6 +1355,11 @@ export default function DmiCockpitLayout({
                   )}
                 </button>
               </div>
+              {state.simulationError && (
+                <div style={{ marginTop: 8, padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, color: '#991b1b', fontSize: '0.85rem' }}>
+                  {state.simulationError}
+                </div>
+              )}
             </Panel>
           </div>
 
@@ -1345,12 +1403,7 @@ export default function DmiCockpitLayout({
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ ...heading, fontSize: '0.9rem' }}>
-                          Cluster {cr.clusterId}
-                          {CLUSTER_NAMES[cr.clusterId] && (
-                            <span style={{ ...bodyText, fontWeight: 400, marginLeft: '6px', fontSize: '0.8rem' }}>
-                              ({CLUSTER_NAMES[cr.clusterId]})
-                            </span>
-                          )}
+                          {state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`}
                         </span>
                         <span
                           style={{
@@ -1454,6 +1507,42 @@ export default function DmiCockpitLayout({
                             </tr>
                           </tfoot>
                         </table>
+
+                        {/* Service Level Curve */}
+                        {clusterServiceLevelCurves[cr.clusterId]?.length > 0 && (
+                          <div style={{ marginTop: '12px' }}>
+                            <p style={{ ...labelMono, marginBottom: '6px' }}>Service Level Curve</p>
+                            <div style={{ width: '100%', height: 160 }}>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={clusterServiceLevelCurves[cr.clusterId]} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
+                                  <XAxis
+                                    dataKey="serviceLevel"
+                                    tick={{ fontSize: 9, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                                    axisLine={{ stroke: DMI.blueTint2 }}
+                                    label={{ value: 'SL %', position: 'insideBottomRight', offset: -3, style: { fontSize: 9, fill: DMI.darkGray } }}
+                                  />
+                                  <YAxis
+                                    tick={{ fontSize: 9, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                                    axisLine={{ stroke: DMI.blueTint2 }}
+                                    label={{ value: 'Voertuigen', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 9, fill: DMI.darkGray } }}
+                                  />
+                                  <RechartsTooltip
+                                    formatter={(value) => [`${Number(value).toLocaleString('nl-NL')}`, 'Max voertuigen']}
+                                    labelFormatter={(label) => `SL: ${label}%`}
+                                  />
+                                  <Line
+                                    type="monotone"
+                                    dataKey="vehicles"
+                                    stroke={CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}
+                                    strokeWidth={2}
+                                    dot={{ r: 3, fill: CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue }}
+                                  />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

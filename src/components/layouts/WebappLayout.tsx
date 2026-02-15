@@ -2,9 +2,9 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
-import { VEHICLES, FUNCTIONS } from '@/lib/model-data';
-import { DMI, PERIOD_COLORS, FUNCTION_COLORS, CLUSTER_COLORS, CLUSTER_NAMES, SERVICE_LEVEL_OPTIONS, MAX_CLUSTERS, heading, bodyText, labelMono } from '@/lib/dmi-theme';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
+import { VEHICLES, FUNCTIONS, LOADING_BAY_WIDTH_M } from '@/lib/model-data';
+import { DMI, PERIOD_COLORS, FUNCTION_COLORS, CLUSTER_COLORS, SERVICE_LEVEL_OPTIONS, MAX_CLUSTERS, heading, bodyText, labelMono } from '@/lib/dmi-theme';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
 import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen, MapPin, RotateCcw, Settings } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -112,12 +112,12 @@ export default function WebappLayout({
   const clusterBarData = useMemo(() => {
     if (!state.results) return [];
     return state.results.clusterResults.map((cr) => ({
-      name: CLUSTER_NAMES[cr.clusterId] || `Cluster ${cr.clusterId}`,
+      name: state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`,
       space: Math.round(cr.totalSpaceM2 * 10) / 10,
       fill: CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue,
       clusterId: cr.clusterId,
     }));
-  }, [state.results]);
+  }, [state.results, state.clusterNames]);
 
   const vehicleArrivalData = useMemo(() => {
     if (!state.results) return [];
@@ -139,6 +139,20 @@ export default function WebappLayout({
         length: Math.round(vr.requiredSpaceM2 * 10) / 10,
         fill: CLUSTER_COLORS[vr.clusterId] || DMI.mediumBlue,
       }));
+  }, [state.results]);
+
+  // Service level curve data per cluster
+  const clusterServiceLevelCurves = useMemo(() => {
+    if (!state.results) return {};
+    const curves: Record<number, { serviceLevel: number; vehicles: number }[]> = {};
+    for (const cr of state.results.clusterResults) {
+      const points: { serviceLevel: number; vehicles: number }[] = [];
+      for (const slKey of Object.keys(cr.maxVehiclesPerServiceLevel).sort((a, b) => Number(a) - Number(b))) {
+        points.push({ serviceLevel: Number(slKey), vehicles: cr.maxVehiclesPerServiceLevel[Number(slKey)] });
+      }
+      curves[cr.clusterId] = points;
+    }
+    return curves;
   }, [state.results]);
 
   const tabs: { id: WebappTab; label: string; icon: React.ReactNode }[] = [
@@ -450,14 +464,11 @@ export default function WebappLayout({
 
               {handleidingSubTab === 'casus' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '900px' }}>
-                  <div>
-                    <p style={{ ...bodyText, fontSize: '1rem', color: DMI.mediumBlue, marginBottom: '12px' }}>
-                      {CASUS_GERARD_DOUSTRAAT.subtitle}
-                    </p>
-                    <p style={{ ...bodyText, fontSize: '0.95rem', lineHeight: 1.7, color: DMI.darkGray }}>
+                  <WCard title={CASUS_GERARD_DOUSTRAAT.subtitle}>
+                    <p style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, margin: 0, color: DMI.darkGray }}>
                       {CASUS_GERARD_DOUSTRAAT.intro}
                     </p>
-                  </div>
+                  </WCard>
 
                   {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
                     <WCard key={sIdx} title={section.title}>
@@ -472,10 +483,12 @@ export default function WebappLayout({
                         ))}
                         {section.images && section.images.map((img, iIdx) => (
                           <figure key={iIdx} style={{ margin: '16px 0 0 0' }}>
-                            <img
+                            <Image
                               src={img.src}
                               alt={img.alt}
-                              style={{ width: '100%', borderRadius: '8px', border: `1px solid ${DMI.blueTint2}` }}
+                              width={1200}
+                              height={675}
+                              style={{ width: '100%', height: 'auto', borderRadius: '8px', border: `1px solid ${DMI.blueTint2}` }}
                             />
                             {img.caption && (
                               <figcaption style={{ ...bodyText, fontSize: '0.75rem', color: DMI.darkGray, marginTop: '8px', fontStyle: 'italic' }}>
@@ -563,7 +576,7 @@ export default function WebappLayout({
                 />
                 <KpiCard
                   label="Benodigde Oppervlakte"
-                  value={state.results ? `${Math.round(state.results.totalSpaceM2 * 3 * 10) / 10}` : '--'}
+                  value={state.results ? `${Math.round(state.results.totalSpaceM2 * LOADING_BAY_WIDTH_M * 10) / 10}` : '--'}
                   unit="m²"
                   accent={DMI.themeLogistics}
                 />
@@ -633,7 +646,7 @@ export default function WebappLayout({
                               backgroundColor: CLUSTER_COLORS[cid] || DMI.mediumBlue,
                             }}
                           />
-                          {CLUSTER_NAMES[cid] || `Cluster ${cid}`}
+                          {state.clusterNames[cid] || `Cluster ${cid}`}
                           {' '}({(state.clusterServiceLevels[cid] * 100).toFixed(0)}%)
                         </span>
                       ))}
@@ -1139,8 +1152,27 @@ export default function WebappLayout({
                               }}
                             />
                             <span style={{ ...heading, fontSize: '0.95rem' }}>
-                              {CLUSTER_NAMES[cid] || `Cluster ${cid}`}
+                              Cluster {cid}
                             </span>
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <input
+                              type="text"
+                              placeholder="Naam..."
+                              value={state.clusterNames[cid] || ''}
+                              onChange={(e) => state.handleClusterNameChange(cid, e.target.value)}
+                              style={{
+                                padding: '6px 10px',
+                                border: `1px solid ${DMI.blueTint2}`,
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                color: DMI.darkBlue,
+                                fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                                backgroundColor: DMI.white,
+                                width: '100%',
+                                boxSizing: 'border-box',
+                              }}
+                            />
                           </div>
                           <p style={{ ...bodyText, fontSize: '0.8rem', marginBottom: '12px', color: DMI.darkGray }}>
                             Voertuigen: {vehiclesInCluster.map((v) => v.name).join(', ')}
@@ -1260,6 +1292,12 @@ export default function WebappLayout({
                   </button>
                 </div>
 
+                {state.simulationError && (
+                  <div style={{ marginTop: 16, padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#991b1b', fontSize: '0.9rem' }}>
+                    {state.simulationError}
+                  </div>
+                )}
+
                 {/* Success message when results exist */}
                 {state.results && (
                   <div
@@ -1278,7 +1316,7 @@ export default function WebappLayout({
                     <span style={{ ...bodyText, fontSize: '0.9rem', color: DMI.darkBlue }}>
                       Simulatie voltooid. Totale benodigde ruimte:{' '}
                       <strong>{Math.round(state.results.totalSpaceM2 * 10) / 10} meter</strong>{' '}
-                      ({Math.round(state.results.totalSpaceM2 * 3 * 10) / 10} m²)
+                      ({Math.round(state.results.totalSpaceM2 * LOADING_BAY_WIDTH_M * 10) / 10} m²)
                     </span>
                     <button
                       onClick={() => setActiveTab('resultaten')}
@@ -1360,7 +1398,7 @@ export default function WebappLayout({
                     />
                     <KpiCard
                       label="Totale Oppervlakte"
-                      value={Math.round(state.results.totalSpaceM2 * 3 * 10) / 10}
+                      value={Math.round(state.results.totalSpaceM2 * LOADING_BAY_WIDTH_M * 10) / 10}
                       unit="m²"
                       accent={DMI.themeLogistics}
                     />
@@ -1437,7 +1475,7 @@ export default function WebappLayout({
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <span style={{ ...heading, fontSize: '0.9rem' }}>
-                                  {CLUSTER_NAMES[cr.clusterId] || `Cluster ${cr.clusterId}`}
+                                  {state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`}
                                 </span>
                                 <span
                                   style={{
@@ -1585,7 +1623,7 @@ export default function WebappLayout({
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <span style={{ ...heading, fontSize: '1rem' }}>
-                                  {CLUSTER_NAMES[cr.clusterId] || `Cluster ${cr.clusterId}`}
+                                  {state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`}
                                 </span>
                                 <span
                                   style={{
@@ -1657,6 +1695,42 @@ export default function WebappLayout({
                                     })}
                                   </div>
                                 </div>
+
+                                {/* Service Level Curve */}
+                                {clusterServiceLevelCurves[cr.clusterId]?.length > 0 && (
+                                  <div style={{ marginBottom: '20px' }}>
+                                    <p style={{ ...labelMono, marginBottom: '10px' }}>Service Level Curve</p>
+                                    <div style={{ width: '100%', height: 200 }}>
+                                      <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={clusterServiceLevelCurves[cr.clusterId]} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                                          <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
+                                          <XAxis
+                                            dataKey="serviceLevel"
+                                            tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                                            axisLine={{ stroke: DMI.blueTint2 }}
+                                            label={{ value: 'SL %', position: 'insideBottomRight', offset: -3, style: { fontSize: 10, fill: DMI.darkGray } }}
+                                          />
+                                          <YAxis
+                                            tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                                            axisLine={{ stroke: DMI.blueTint2 }}
+                                            label={{ value: 'Voertuigen', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 10, fill: DMI.darkGray } }}
+                                          />
+                                          <RechartsTooltip
+                                            formatter={(value) => [`${Number(value).toLocaleString('nl-NL')}`, 'Max voertuigen']}
+                                            labelFormatter={(label) => `SL: ${label}%`}
+                                          />
+                                          <Line
+                                            type="monotone"
+                                            dataKey="vehicles"
+                                            stroke={CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}
+                                            strokeWidth={2}
+                                            dot={{ r: 3, fill: CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue }}
+                                          />
+                                        </LineChart>
+                                      </ResponsiveContainer>
+                                    </div>
+                                  </div>
+                                )}
 
                                 {/* Vehicle detail table */}
                                 <div>
@@ -1954,7 +2028,7 @@ export default function WebappLayout({
                               lineHeight: 1,
                             }}
                           >
-                            {Math.round(state.results.totalSpaceM2 * 3 * 10) / 10}
+                            {Math.round(state.results.totalSpaceM2 * LOADING_BAY_WIDTH_M * 10) / 10}
                           </div>
                           <div
                             style={{
