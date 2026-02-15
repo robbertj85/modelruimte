@@ -8,7 +8,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Loader2, Play } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
-import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT } from '@/lib/content';
+import { useIsMobile } from '@/lib/useIsMobile';
+import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
@@ -62,7 +63,6 @@ const CLUSTER_COLORS: Record<number, string> = {
 const TABS = [
   { id: 'cover', label: 'Cover' },
   { id: 'handleiding', label: 'Handleiding' },
-  { id: 'casus', label: 'Casus' },
   { id: 'cockpit', label: 'Cockpit' },
   { id: 'inputs', label: 'Inputs' },
   { id: 'algemeen', label: 'Algemeen' },
@@ -237,8 +237,10 @@ export default function RebelExcelLayout({
   } = state;
 
   const [activeTab, setActiveTab] = useState<TabId>('cockpit');
+  const [handleidingSubTab, setHandleidingSubTab] = useState<'handleiding' | 'casus'>('handleiding');
   const [selectedFunction, setSelectedFunction] = useState<string | null>('algemeen');
   const [extendedSim, setExtendedSim] = useState(false);
+  const { isMobile, isCompact } = useIsMobile();
 
   // --- Derived data for charts ---
 
@@ -249,14 +251,14 @@ export default function RebelExcelLayout({
   }, [clusterServiceLevels]);
 
   const donutData = useMemo(() => {
-    return FUNCTIONS
+    return state.allFunctions
       .filter((f) => (functionCounts[f.id] ?? 0) > 0)
       .map((f, idx) => ({
         name: f.name,
         value: functionCounts[f.id] ?? 0,
         fill: FUNCTION_COLORS[idx % FUNCTION_COLORS.length],
       }));
-  }, [functionCounts]);
+  }, [functionCounts, state.allFunctions]);
 
   const vehicleArrivalsData = useMemo(() => {
     if (!results) return [];
@@ -346,13 +348,13 @@ export default function RebelExcelLayout({
           justifyContent: 'center',
           minHeight: 'calc(100vh - 140px)',
           backgroundColor: REBEL.darkBg,
-          padding: '60px',
+          padding: isMobile ? '20px 16px' : '60px',
         }}
       >
         <div
           style={{
             backgroundColor: REBEL.white,
-            padding: '60px 80px',
+            padding: isMobile ? '24px 20px' : '60px 80px',
             textAlign: 'center',
             border: `4px solid ${REBEL.coral}`,
             maxWidth: '800px',
@@ -376,27 +378,46 @@ export default function RebelExcelLayout({
           >
             {COVER.title}
           </h1>
+          {COVER.subtitle && (
+            <p
+              style={{
+                fontFamily: 'Calibri, Arial, sans-serif',
+                fontSize: '1rem',
+                color: REBEL.textDark,
+                marginBottom: '16px',
+              }}
+            >
+              {COVER.subtitle}
+            </p>
+          )}
           <p
             style={{
               fontFamily: 'Calibri, Arial, sans-serif',
-              fontSize: '1rem',
-              color: REBEL.textDark,
-              marginBottom: '16px',
-            }}
-          >
-            {COVER.subtitle}
-          </p>
-          <p
-            style={{
-              fontFamily: 'Calibri, Arial, sans-serif',
-              fontSize: '0.85rem',
+              fontSize: '0.9rem',
               color: REBEL.tabInactive,
               lineHeight: 1.6,
-              marginBottom: '30px',
+              marginBottom: '12px',
+              fontStyle: 'italic',
             }}
           >
             {COVER.description}
           </p>
+          {COVER.paragraphs.map((para, i) => (
+            <p
+              key={i}
+              style={{
+                fontFamily: 'Calibri, Arial, sans-serif',
+                fontSize: '0.85rem',
+                color: REBEL.tabInactive,
+                lineHeight: 1.6,
+                marginBottom: '10px',
+                textAlign: 'left',
+              }}
+            >
+              {para}
+            </p>
+          ))}
+          <div style={{ marginBottom: '24px' }} />
           <div style={{ borderTop: `2px solid ${REBEL.coral}`, paddingTop: '24px' }}>
             {PARTNER_SECTIONS.map((section) => (
               <div key={section.label} style={{ marginBottom: '20px' }}>
@@ -433,7 +454,19 @@ export default function RebelExcelLayout({
                 </div>
               </div>
             ))}
+
+            {/* License */}
             <div style={{ marginTop: '16px', borderTop: `1px solid ${REBEL.border}`, paddingTop: '12px' }}>
+              <p style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.7rem', fontWeight: 700, color: REBEL.textDark, marginBottom: '4px' }}>
+                {COVER.license.label}
+              </p>
+              <p style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.7rem', color: REBEL.tabInactive, margin: 0, lineHeight: 1.6 }}>
+                {COVER.license.text}
+              </p>
+            </div>
+
+            {/* Contact */}
+            <div style={{ marginTop: '12px', borderTop: `1px solid ${REBEL.border}`, paddingTop: '12px' }}>
               <p style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.7rem', fontWeight: 700, color: REBEL.textDark, marginBottom: '4px' }}>
                 {CONTACT.label}
               </p>
@@ -452,55 +485,168 @@ export default function RebelExcelLayout({
   function renderHandleidingTab() {
     return (
       <div style={{ padding: '30px', maxWidth: '800px', margin: '0 auto' }}>
-        <ExcelPanel title="Handleiding Ruimtemodel Stadslogistiek">
-          <div
-            style={{
-              fontFamily: 'Calibri, Arial, sans-serif',
-              fontSize: '0.85rem',
-              color: REBEL.textDark,
-              lineHeight: 1.7,
-            }}
-          >
-            {HANDLEIDING_SECTIONS.map((section, sIdx) => (
-              <div key={section.title}>
-                <h3
-                  style={{
-                    color: REBEL.coral,
-                    fontSize: '1rem',
-                    marginTop: sIdx === 0 ? 0 : '24px',
-                    marginBottom: '10px',
-                  }}
-                >
-                  {section.title}
-                </h3>
-                {section.paragraphs.map((p, pIdx) => (
-                  <p key={pIdx} style={{ marginBottom: '10px' }}>
-                    {p}
-                  </p>
-                ))}
-                {section.tables?.map((table, ti) => (
-                  <HandleidingTableRenderer key={ti} table={table} theme="rebel" />
-                ))}
-                {section.diagrams?.map((key) => (
-                  <HandleidingDiagram key={key} diagramKey={key} theme="rebel" />
-                ))}
-              </div>
+        <ExcelPanel title="Handleiding Rekentool Ruimte voor Stadslogistiek">
+          {/* Sub-toggle: Handleiding / Casus */}
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#f5f5f5', borderRadius: '4px', padding: '3px', width: 'fit-content' }}>
+            {([['handleiding', 'Uitleg'], ['casus', 'Casus Gerard Doustraat']] as const).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setHandleidingSubTab(id)}
+                style={{
+                  padding: '5px 14px', borderRadius: '3px', border: 'none', cursor: 'pointer',
+                  fontSize: '0.8rem', fontFamily: 'Calibri, Arial, sans-serif',
+                  fontWeight: handleidingSubTab === id ? 700 : 400,
+                  backgroundColor: handleidingSubTab === id ? REBEL.white : 'transparent',
+                  color: handleidingSubTab === id ? REBEL.coral : REBEL.tabInactive,
+                  boxShadow: handleidingSubTab === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {label}
+              </button>
             ))}
+          </div>
 
+          {handleidingSubTab === 'handleiding' && (
             <div
               style={{
-                marginTop: '24px',
-                padding: '16px',
-                backgroundColor: '#fff8e1',
-                border: `1px solid #f79646`,
-                borderLeft: `4px solid #f79646`,
+                fontFamily: 'Calibri, Arial, sans-serif',
+                fontSize: '0.85rem',
+                color: REBEL.textDark,
+                lineHeight: 1.7,
               }}
             >
-              <strong style={{ color: '#f79646' }}>Tip:</strong> Standaard is het service level 95%.
-              Een lager percentage resulteert in minder benodigde ruimte, maar een groter risico op
-              tekorten bij piekdrukte.
+              {HANDLEIDING_SECTIONS.map((section, sIdx) => (
+                <div key={section.title}>
+                  <h3
+                    style={{
+                      color: REBEL.coral,
+                      fontSize: '1rem',
+                      marginTop: sIdx === 0 ? 0 : '24px',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    {section.title}
+                  </h3>
+                  {section.paragraphs.map((p, pIdx) => (
+                    <p key={pIdx} style={{ marginBottom: '10px' }}>
+                      {renderBold(p)}
+                    </p>
+                  ))}
+                  {section.tables?.map((table, ti) => (
+                    <HandleidingTableRenderer key={ti} table={table} theme="rebel" />
+                  ))}
+                  {section.diagrams?.map((key) => (
+                    <HandleidingDiagram key={key} diagramKey={key} theme="rebel" />
+                  ))}
+                </div>
+              ))}
+
+              <div
+                style={{
+                  marginTop: '24px',
+                  padding: '16px',
+                  backgroundColor: '#fff8e1',
+                  border: `1px solid #f79646`,
+                  borderLeft: `4px solid #f79646`,
+                }}
+              >
+                <strong style={{ color: '#f79646' }}>Tip:</strong> Standaard is het service level 95%.
+                Een lager percentage resulteert in minder benodigde ruimte, maar een groter risico op
+                tekorten bij piekdrukte.
+              </div>
             </div>
-          </div>
+          )}
+
+          {handleidingSubTab === 'casus' && (
+            <div style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.85rem', color: REBEL.textDark, lineHeight: 1.7 }}>
+              <p style={{ fontSize: '0.95rem', marginBottom: '8px' }}>
+                {CASUS_GERARD_DOUSTRAAT.subtitle}
+              </p>
+              <p style={{ fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '24px' }}>
+                {CASUS_GERARD_DOUSTRAAT.intro}
+              </p>
+
+              {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
+                <div
+                  key={sIdx}
+                  style={{
+                    backgroundColor: REBEL.white,
+                    border: `1px solid ${REBEL.border}`,
+                    borderRadius: '4px',
+                    padding: '16px 20px',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: REBEL.coral, marginBottom: '10px' }}>
+                    {section.title}
+                  </h3>
+                  {section.paragraphs.map((p, pIdx) => (
+                    <p key={pIdx} style={{ whiteSpace: 'pre-line', marginBottom: '8px' }}>
+                      {renderBold(p)}
+                    </p>
+                  ))}
+                  {section.tables?.map((table, ti) => (
+                    <HandleidingTableRenderer key={ti} table={table} theme="rebel" />
+                  ))}
+                  {section.images && section.images.map((img, iIdx) => (
+                    <figure key={iIdx} style={{ margin: '12px 0 0 0' }}>
+                      <img
+                        src={img.src}
+                        alt={img.alt}
+                        style={{ width: '100%', borderRadius: '4px', border: `1px solid ${REBEL.border}` }}
+                      />
+                      {img.caption && (
+                        <figcaption style={{ fontSize: '0.75rem', color: REBEL.tabInactive, marginTop: '6px', fontStyle: 'italic' }}>
+                          {img.caption}
+                        </figcaption>
+                      )}
+                    </figure>
+                  ))}
+                </div>
+              ))}
+
+              <div
+                style={{
+                  backgroundColor: REBEL.white,
+                  border: `1px solid ${REBEL.border}`,
+                  borderRadius: '4px',
+                  padding: '16px 20px',
+                  marginBottom: '12px',
+                }}
+              >
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: REBEL.coral, marginBottom: '10px' }}>
+                  Probeer het zelf
+                </h3>
+                <p style={{ marginBottom: '14px' }}>
+                  Laad de invoerwaarden van de Gerard Doustraat casus in het model, of begin met een leeg model.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => { state.resetToGerardDoustraat(); setActiveTab('cockpit' as TabId); }}
+                    style={{
+                      padding: '8px 16px', borderRadius: '4px', border: 'none',
+                      backgroundColor: REBEL.coral, color: REBEL.white,
+                      fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                    }}
+                  >
+                    Laad Casus Gerard Doustraat
+                  </button>
+                  <button
+                    onClick={() => { state.resetToBlank(); setActiveTab('cockpit' as TabId); }}
+                    style={{
+                      padding: '8px 16px', borderRadius: '4px',
+                      border: `2px solid ${REBEL.coral}`, backgroundColor: 'transparent',
+                      color: REBEL.coral,
+                      fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                    }}
+                  >
+                    Begin met leeg model
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </ExcelPanel>
       </div>
     );
@@ -519,7 +665,7 @@ export default function RebelExcelLayout({
             }}
           >
             <p style={{ marginBottom: '12px' }}>
-              Het Ruimtemodel Stadslogistiek is ontwikkeld om gemeenten, gebiedsontwikkelaars en
+              De Rekentool Ruimte voor Stadslogistiek is ontwikkeld om gemeenten, gebiedsontwikkelaars en
               logistieke planners te ondersteunen bij het bepalen van de benodigde ruimte voor
               stedelijke logistiek.
             </p>
@@ -537,111 +683,21 @@ export default function RebelExcelLayout({
     );
   }
 
-  function renderCasusTab() {
-    return (
-      <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
-        <h2 style={{ fontFamily: 'Calibri, sans-serif', fontSize: '1.5rem', fontWeight: 700, color: REBEL.coral, marginBottom: '6px' }}>
-          {CASUS_GERARD_DOUSTRAAT.title}
-        </h2>
-        <p style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.95rem', color: REBEL.textDark, marginBottom: '16px' }}>
-          {CASUS_GERARD_DOUSTRAAT.subtitle}
-        </p>
-        <p style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.9rem', color: REBEL.textDark, lineHeight: 1.7, marginBottom: '24px' }}>
-          {CASUS_GERARD_DOUSTRAAT.intro}
-        </p>
-
-        {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
-          <div
-            key={sIdx}
-            style={{
-              backgroundColor: REBEL.white,
-              border: `1px solid ${REBEL.border}`,
-              borderRadius: '4px',
-              padding: '16px 20px',
-              marginBottom: '12px',
-            }}
-          >
-            <h3 style={{ fontFamily: 'Calibri, sans-serif', fontSize: '1.1rem', fontWeight: 700, color: REBEL.coral, marginBottom: '10px' }}>
-              {section.title}
-            </h3>
-            {section.paragraphs.map((p, pIdx) => (
-              <p key={pIdx} style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.85rem', color: REBEL.textDark, lineHeight: 1.7, whiteSpace: 'pre-line', marginBottom: '8px' }}>
-                {p}
-              </p>
-            ))}
-            {section.images && section.images.map((img, iIdx) => (
-              <figure key={iIdx} style={{ margin: '12px 0 0 0' }}>
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  style={{ width: '100%', borderRadius: '4px', border: `1px solid ${REBEL.border}` }}
-                />
-                {img.caption && (
-                  <figcaption style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.75rem', color: REBEL.tabInactive, marginTop: '6px', fontStyle: 'italic' }}>
-                    {img.caption}
-                  </figcaption>
-                )}
-              </figure>
-            ))}
-          </div>
-        ))}
-
-        <div
-          style={{
-            backgroundColor: REBEL.white,
-            border: `1px solid ${REBEL.border}`,
-            borderRadius: '4px',
-            padding: '16px 20px',
-            marginBottom: '12px',
-          }}
-        >
-          <h3 style={{ fontFamily: 'Calibri, sans-serif', fontSize: '1.1rem', fontWeight: 700, color: REBEL.coral, marginBottom: '10px' }}>
-            Probeer het zelf
-          </h3>
-          <p style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.85rem', color: REBEL.textDark, lineHeight: 1.7, marginBottom: '14px' }}>
-            Laad de invoerwaarden van de Gerard Doustraat casus in het model, of begin met een leeg model.
-          </p>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => { state.resetToGerardDoustraat(); setActiveTab('cockpit' as TabId); }}
-              style={{
-                padding: '8px 16px', borderRadius: '4px', border: 'none',
-                backgroundColor: REBEL.coral, color: REBEL.white,
-                fontFamily: 'Calibri, sans-serif', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-              }}
-            >
-              Laad Casus Gerard Doustraat
-            </button>
-            <button
-              onClick={() => { state.resetToBlank(); setActiveTab('cockpit' as TabId); }}
-              style={{
-                padding: '8px 16px', borderRadius: '4px',
-                border: `2px solid ${REBEL.coral}`, backgroundColor: 'transparent',
-                color: REBEL.coral,
-                fontFamily: 'Calibri, sans-serif', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-              }}
-            >
-              Begin met leeg model
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   function renderCockpitTab() {
     return (
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: isMobile ? '8px' : '16px' }}>
         {/* Title bar with navigation */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '10px 16px',
+            padding: isMobile ? '8px 12px' : '10px 16px',
             backgroundColor: REBEL.coral,
             color: REBEL.white,
             marginBottom: '12px',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+            gap: isMobile ? '8px' : '0',
           }}
         >
           <h2
@@ -652,7 +708,7 @@ export default function RebelExcelLayout({
               margin: 0,
             }}
           >
-            Ruimtemodel: Cockpit
+            Rekentool: Cockpit
           </h2>
           <div style={{ display: 'flex', gap: '8px' }}>
             {['cover', 'handleiding', 'inputs'].map((tabId) => (
@@ -681,7 +737,7 @@ export default function RebelExcelLayout({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(5, 1fr)',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isCompact ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
             gap: '8px',
             marginBottom: '12px',
           }}
@@ -717,17 +773,17 @@ export default function RebelExcelLayout({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
+            gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr 1fr',
             gap: '8px',
             marginBottom: '8px',
           }}
         >
           {/* Panel 1: Inventarisatie Functies with pie chart */}
           <ExcelPanel title="Inventarisatie Functies">
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px' }}>
               {/* Left: function inputs */}
-              <div style={{ flex: '1 1 55%', maxHeight: '380px', overflowY: 'auto' }}>
-                {FUNCTIONS.map((func, idx) => {
+              <div style={{ flex: '1 1 55%', maxHeight: isMobile ? 'none' : '380px', overflowY: 'auto' }}>
+                {state.allFunctions.map((func, idx) => {
                   const count = functionCounts[func.id] ?? 0;
                   const barWidth = maxFunctionCount > 0 ? (count / maxFunctionCount) * 100 : 0;
                   return (
@@ -752,7 +808,7 @@ export default function RebelExcelLayout({
                           value={count}
                           onChange={(e) => handleFunctionCountChange(func.id, e.target.value)}
                           style={{
-                            width: '52px',
+                            width: '72px',
                             padding: '2px 4px',
                             border: `1px solid ${REBEL.border}`,
                             fontSize: '0.7rem',
@@ -928,7 +984,7 @@ export default function RebelExcelLayout({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
+            gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr 1fr',
             gap: '8px',
             marginBottom: '8px',
           }}
@@ -1218,7 +1274,7 @@ export default function RebelExcelLayout({
             </div>
 
             {/* Simulation count + Run button */}
-            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '12px' }}>
               <div style={{ flex: 1 }}>
                 <p
                   style={{
@@ -1302,6 +1358,7 @@ export default function RebelExcelLayout({
         {/* Row 3: Details per Cluster */}
         {results && (
           <ExcelPanel title="Details per Cluster">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
             {results.clusterResults.map((cr) => {
               const vehiclesInCluster = results.vehicleResults.filter(
                 (vr) => vr.clusterId === cr.clusterId
@@ -1313,7 +1370,6 @@ export default function RebelExcelLayout({
                 <div
                   key={cr.clusterId}
                   style={{
-                    marginBottom: '6px',
                     border: `1px solid ${REBEL.border}`,
                     borderLeft: `4px solid ${CLUSTER_COLORS[cr.clusterId] || REBEL.coral}`,
                     overflow: 'hidden',
@@ -1385,9 +1441,9 @@ export default function RebelExcelLayout({
                   {/* Expanded details */}
                   {isExpanded && (
                     <div style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', gap: '16px' }}>
-                        {/* Left: table */}
-                        <div style={{ flex: '1 1 55%' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* Table */}
+                        <div>
                           <table
                             style={{
                               width: '100%',
@@ -1554,8 +1610,8 @@ export default function RebelExcelLayout({
                             </tfoot>
                           </table>
                         </div>
-                        {/* Right: service level curve line chart */}
-                        <div style={{ flex: '1 1 45%' }}>
+                        {/* Service level curve line chart */}
+                        <div>
                           {curveData.length > 0 ? (
                             <div style={{ height: '200px' }}>
                               <p
@@ -1609,6 +1665,7 @@ export default function RebelExcelLayout({
                 </div>
               );
             })}
+            </div>
           </ExcelPanel>
         )}
 
@@ -1619,7 +1676,7 @@ export default function RebelExcelLayout({
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gridTemplateColumns: isCompact ? '1fr' : 'repeat(3, 1fr)',
                   gap: '8px',
                 }}
               >
@@ -1742,7 +1799,7 @@ export default function RebelExcelLayout({
 
   function renderInputsTab() {
     return (
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: isMobile ? '8px' : '16px' }}>
         {/* Title bar */}
         <div
           style={{
@@ -1760,7 +1817,7 @@ export default function RebelExcelLayout({
               margin: 0,
             }}
           >
-            Ruimtemodel: Inputs
+            Rekentool: Inputs
           </h2>
         </div>
 
@@ -1881,6 +1938,7 @@ export default function RebelExcelLayout({
         {/* Content area */}
         {selectedFunction === 'algemeen' && (
           <ExcelPanel title="Algemene Inputs - Aantal per Functie">
+            <div style={{ overflowX: 'auto' }}>
             <table
               style={{
                 width: '100%',
@@ -1921,6 +1979,7 @@ export default function RebelExcelLayout({
                 </tr>
               </tfoot>
             </table>
+            </div>
           </ExcelPanel>
         )}
 
@@ -1959,7 +2018,8 @@ export default function RebelExcelLayout({
       {/* Floating layout switcher */}
       <LayoutSwitcher current={layout} onChange={onLayoutChange} />
 
-      {/* Left sidebar */}
+      {/* Left sidebar - hidden on mobile */}
+      {!isMobile && (
       <div
         style={{
           width: '48px',
@@ -1988,9 +2048,10 @@ export default function RebelExcelLayout({
             whiteSpace: 'nowrap',
           }}
         >
-          Ruimtemodel Stadslogistiek
+          Rekentool Ruimte voor Stadslogistiek
         </div>
       </div>
+      )}
 
       {/* Main content area */}
       <div
@@ -2012,7 +2073,6 @@ export default function RebelExcelLayout({
         >
           {activeTab === 'cover' && renderCoverTab()}
           {activeTab === 'handleiding' && renderHandleidingTab()}
-          {activeTab === 'casus' && renderCasusTab()}
           {activeTab === 'cockpit' && renderCockpitTab()}
           {activeTab === 'inputs' && renderInputsTab()}
           {activeTab === 'algemeen' && renderAlgemeenTab()}
@@ -2032,6 +2092,8 @@ export default function RebelExcelLayout({
           backgroundColor: REBEL.darkBg2,
           borderTop: `1px solid ${REBEL.tabInactive}`,
           zIndex: 1000,
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {TABS.map((tab) => {

@@ -9,12 +9,14 @@ import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, Chev
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
-import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT } from '@/lib/content';
+import { useIsMobile } from '@/lib/useIsMobile';
+import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
 
-type WebappTab = 'cover' | 'handleiding' | 'casus' | 'dashboard' | 'invoer' | 'parameters' | 'clustering' | 'resultaten';
+type WebappTab = 'cover' | 'handleiding' | 'dashboard' | 'invoer' | 'parameters' | 'clustering' | 'resultaten';
+type HandleidingSubTab = 'handleiding' | 'casus';
 
 const TICK_STYLE = { fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray } as const;
 const TICK_SM = { ...TICK_STYLE, fontSize: 10 } as const;
@@ -86,8 +88,10 @@ export default function WebappLayout({
   onLayoutChange: (layout: LayoutType) => void;
 }) {
   const [activeTab, setActiveTab] = useState<WebappTab>('dashboard');
+  const [handleidingSubTab, setHandleidingSubTab] = useState<HandleidingSubTab>('handleiding');
   const [extendedSim, setExtendedSim] = useState(false);
   const [paramView, setParamView] = useState<'algemeen' | string>('algemeen');
+  const { isMobile, isCompact } = useIsMobile();
 
   const activeFunctionCount = useMemo(() => {
     return Object.entries(state.functionCounts).filter(([, count]) => count > 0).length;
@@ -96,14 +100,14 @@ export default function WebappLayout({
   const clusterCount = state.clusterIds.length;
 
   const functionDonutData = useMemo(() => {
-    return FUNCTIONS
+    return state.allFunctions
       .filter((f) => (state.functionCounts[f.id] ?? 0) > 0)
       .map((f, idx) => ({
         name: f.name,
         value: state.functionCounts[f.id] ?? 0,
         fill: FUNCTION_COLORS[idx % FUNCTION_COLORS.length],
       }));
-  }, [state.functionCounts]);
+  }, [state.functionCounts, state.allFunctions]);
 
   const clusterBarData = useMemo(() => {
     if (!state.results) return [];
@@ -140,7 +144,6 @@ export default function WebappLayout({
   const tabs: { id: WebappTab; label: string; icon: React.ReactNode }[] = [
     { id: 'cover', label: 'Info', icon: <Info size={18} /> },
     { id: 'handleiding', label: 'Handleiding', icon: <BookOpen size={18} /> },
-    { id: 'casus', label: 'Casus', icon: <MapPin size={18} /> },
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
     { id: 'invoer', label: 'Invoer', icon: <ClipboardList size={18} /> },
     { id: 'parameters', label: 'Parameters', icon: <Settings size={18} /> },
@@ -163,20 +166,60 @@ export default function WebappLayout({
             backgroundColor: DMI.white,
             borderBottom: `1px solid ${DMI.blueTint2}`,
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
             justifyContent: 'space-between',
-            padding: '0 32px',
-            height: '64px',
+            padding: isMobile ? '0' : '0 32px',
+            minHeight: isMobile ? 'auto' : '64px',
             boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
           }}
         >
-          {/* Left: Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '160px' }}>
-            <Image src="/dmi-logo.png" alt="DMI" width={200} height={64} style={{ objectFit: 'contain' }} />
+          {/* Top row on mobile: Logo + Run button */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: isMobile ? '8px 16px' : '0',
+            minWidth: isMobile ? 'auto' : '160px',
+            gap: '12px',
+          }}>
+            <Image src="/dmi-logo.png" alt="DMI" width={isMobile ? 140 : 200} height={isMobile ? 44 : 64} style={{ objectFit: 'contain' }} />
+            {isMobile && (
+              <button
+                onClick={state.handleRun}
+                disabled={state.isRunning}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: state.isRunning ? 'not-allowed' : 'pointer',
+                  backgroundColor: state.isRunning ? DMI.darkGray : DMI.darkBlue,
+                  color: DMI.white,
+                  fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  flexShrink: 0,
+                }}
+              >
+                {state.isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                {state.isRunning ? 'Bezig...' : 'Run'}
+              </button>
+            )}
           </div>
 
-          {/* Center: Tab buttons */}
-          <div style={{ display: 'flex', gap: '4px' }}>
+          {/* Tab buttons - scrollable on mobile */}
+          <div style={{
+            display: 'flex',
+            gap: isMobile ? '0' : '4px',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            borderTop: isMobile ? `1px solid ${DMI.blueTint2}` : 'none',
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
+          }}>
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -186,8 +229,8 @@ export default function WebappLayout({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 20px',
+                    gap: isMobile ? '4px' : '8px',
+                    padding: isMobile ? '10px 12px' : '8px 20px',
                     border: 'none',
                     background: 'none',
                     cursor: 'pointer',
@@ -195,52 +238,58 @@ export default function WebappLayout({
                     color: isActive ? DMI.darkBlue : DMI.darkGray,
                     fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
                     fontWeight: isActive ? 700 : 500,
-                    fontSize: '0.9rem',
+                    fontSize: isMobile ? '0.75rem' : '0.9rem',
                     transition: 'all 0.2s ease',
                     borderRadius: '4px 4px 0 0',
                     marginBottom: '-1px',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   {tab.icon}
-                  {tab.label}
+                  {isMobile ? null : tab.label}
                 </button>
               );
             })}
           </div>
 
-          {/* Right: Run button + Layout switcher */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>
-            <button
-              onClick={state.handleRun}
-              disabled={state.isRunning}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 24px',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: state.isRunning ? 'not-allowed' : 'pointer',
-                backgroundColor: state.isRunning ? DMI.darkGray : DMI.darkBlue,
-                color: DMI.white,
-                fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 2px 8px rgba(10,54,96,0.3)',
-              }}
-            >
-              {state.isRunning ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-              {state.isRunning ? 'Bezig...' : 'Run Simulaties'}
-            </button>
-            <LayoutSwitcher current={layout} onChange={onLayoutChange} />
-          </div>
+          {/* Right: Run button + Layout switcher - hidden on mobile (run button moved to top row) */}
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={state.handleRun}
+                disabled={state.isRunning}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 24px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: state.isRunning ? 'not-allowed' : 'pointer',
+                  backgroundColor: state.isRunning ? DMI.darkGray : DMI.darkBlue,
+                  color: DMI.white,
+                  fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(10,54,96,0.3)',
+                }}
+              >
+                {state.isRunning ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                {state.isRunning ? 'Bezig...' : 'Run Simulaties'}
+              </button>
+              <LayoutSwitcher current={layout} onChange={onLayoutChange} />
+            </div>
+          )}
         </nav>
+        {/* Mobile layout switcher (renders as fixed bottom pill) */}
+        {isMobile && <LayoutSwitcher current={layout} onChange={onLayoutChange} />}
 
         {/* ============================================================ */}
         {/*  MAIN CONTENT AREA                                           */}
         {/* ============================================================ */}
-        <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px 64px' }}>
+        <main style={{ maxWidth: '1280px', margin: '0 auto', padding: isMobile ? '16px 12px 48px' : '32px 24px 64px' }}>
 
           {/* ---------------------------------------------------------- */}
           {/*  COVER TAB                                                   */}
@@ -252,9 +301,11 @@ export default function WebappLayout({
                   <h1 style={{ ...heading, fontSize: '2rem', marginBottom: '12px' }}>
                     {COVER.title}
                   </h1>
-                  <p style={{ ...bodyText, fontSize: '1.05rem', color: DMI.mediumBlue, marginBottom: '20px' }}>
-                    {COVER.subtitle}
-                  </p>
+                  {COVER.subtitle && (
+                    <p style={{ ...bodyText, fontSize: '1.05rem', color: DMI.mediumBlue, marginBottom: '20px' }}>
+                      {COVER.subtitle}
+                    </p>
+                  )}
                   <div
                     style={{
                       width: '60px',
@@ -267,14 +318,31 @@ export default function WebappLayout({
                   <p
                     style={{
                       ...bodyText,
-                      fontSize: '0.9rem',
+                      fontSize: '0.95rem',
                       lineHeight: 1.7,
                       maxWidth: '640px',
-                      margin: '0 auto 32px',
+                      margin: '0 auto 14px',
+                      fontStyle: 'italic',
                     }}
                   >
                     {COVER.description}
                   </p>
+                  {COVER.paragraphs.map((para, i) => (
+                    <p
+                      key={i}
+                      style={{
+                        ...bodyText,
+                        fontSize: '0.9rem',
+                        lineHeight: 1.7,
+                        maxWidth: '640px',
+                        margin: '0 auto 10px',
+                        textAlign: 'left',
+                      }}
+                    >
+                      {para}
+                    </p>
+                  ))}
+                  <div style={{ marginBottom: '24px' }} />
 
                   {/* Partner logos — grouped by role */}
                   <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '24px' }}>
@@ -297,14 +365,24 @@ export default function WebappLayout({
                         </div>
                       </div>
                     ))}
-                    <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '12px', marginTop: '8px' }}>
-                      <p style={{ ...labelMono, marginBottom: '4px' }}>{CONTACT.label}</p>
-                      {CONTACT.lines.map((line) => (
-                        <p key={line} style={{ ...bodyText, fontSize: '0.72rem', color: DMI.darkGray, margin: 0, lineHeight: 1.6 }}>
-                          {line}
-                        </p>
-                      ))}
-                    </div>
+                  </div>
+
+                  {/* License */}
+                  <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '16px', marginTop: '8px' }}>
+                    <p style={{ ...labelMono, marginBottom: '4px' }}>{COVER.license.label}</p>
+                    <p style={{ ...bodyText, fontSize: '0.72rem', color: DMI.darkGray, margin: 0, lineHeight: 1.6 }}>
+                      {COVER.license.text}
+                    </p>
+                  </div>
+
+                  {/* Contact */}
+                  <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '16px', marginTop: '12px' }}>
+                    <p style={{ ...labelMono, marginBottom: '4px' }}>{CONTACT.label}</p>
+                    {CONTACT.lines.map((line) => (
+                      <p key={line} style={{ ...bodyText, fontSize: '0.72rem', color: DMI.darkGray, margin: 0, lineHeight: 1.6 }}>
+                        {line}
+                      </p>
+                    ))}
                   </div>
                 </div>
               </WCard>
@@ -315,11 +393,34 @@ export default function WebappLayout({
           {/*  HANDLEIDING TAB                                             */}
           {/* ---------------------------------------------------------- */}
           {activeTab === 'handleiding' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div>
-                <h2 style={{ ...heading, fontSize: '1.4rem', marginBottom: '16px' }}>
+                <h2 style={{ ...heading, fontSize: '1.4rem', marginBottom: '12px' }}>
                   Handleiding
                 </h2>
+                {/* Sub-toggle: Handleiding / Casus */}
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: DMI.blueTint3, borderRadius: '8px', padding: '3px', width: 'fit-content' }}>
+                  {([['handleiding', 'Uitleg'], ['casus', 'Casus Gerard Doustraat']] as const).map(([id, label]) => (
+                    <button
+                      key={id}
+                      onClick={() => setHandleidingSubTab(id)}
+                      style={{
+                        padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                        fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                        fontWeight: handleidingSubTab === id ? 600 : 400,
+                        backgroundColor: handleidingSubTab === id ? DMI.white : 'transparent',
+                        color: handleidingSubTab === id ? DMI.darkBlue : DMI.blueTint1,
+                        boxShadow: handleidingSubTab === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {handleidingSubTab === 'handleiding' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {HANDLEIDING_SECTIONS.map((section) => (
                     <WCard key={section.title} title={section.title}>
@@ -333,7 +434,7 @@ export default function WebappLayout({
                             marginBottom: i < section.paragraphs.length - 1 ? '12px' : 0,
                           }}
                         >
-                          {p}
+                          {renderBold(p)}
                         </p>
                       ))}
                       {section.tables?.map((table, ti) => (
@@ -345,85 +446,82 @@ export default function WebappLayout({
                     </WCard>
                   ))}
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* ---------------------------------------------------------- */}
-          {/*  CASUS TAB                                                   */}
-          {/* ---------------------------------------------------------- */}
-          {activeTab === 'casus' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '900px' }}>
-              <div>
-                <h1 style={{ ...heading, fontSize: '1.8rem', marginBottom: '8px' }}>
-                  {CASUS_GERARD_DOUSTRAAT.title}
-                </h1>
-                <p style={{ ...bodyText, fontSize: '1rem', color: DMI.mediumBlue, marginBottom: '16px' }}>
-                  {CASUS_GERARD_DOUSTRAAT.subtitle}
-                </p>
-                <p style={{ ...bodyText, fontSize: '0.95rem', lineHeight: 1.7, color: DMI.darkGray }}>
-                  {CASUS_GERARD_DOUSTRAAT.intro}
-                </p>
-              </div>
-
-              {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
-                <WCard key={sIdx} title={section.title}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {section.paragraphs.map((p, pIdx) => (
-                      <p key={pIdx} style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, whiteSpace: 'pre-line', margin: 0 }}>
-                        {p}
-                      </p>
-                    ))}
-                    {section.images && section.images.map((img, iIdx) => (
-                      <figure key={iIdx} style={{ margin: '16px 0 0 0' }}>
-                        <img
-                          src={img.src}
-                          alt={img.alt}
-                          style={{ width: '100%', borderRadius: '8px', border: `1px solid ${DMI.blueTint2}` }}
-                        />
-                        {img.caption && (
-                          <figcaption style={{ ...bodyText, fontSize: '0.75rem', color: DMI.darkGray, marginTop: '8px', fontStyle: 'italic' }}>
-                            {img.caption}
-                          </figcaption>
-                        )}
-                      </figure>
-                    ))}
+              {handleidingSubTab === 'casus' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '900px' }}>
+                  <div>
+                    <p style={{ ...bodyText, fontSize: '1rem', color: DMI.mediumBlue, marginBottom: '12px' }}>
+                      {CASUS_GERARD_DOUSTRAAT.subtitle}
+                    </p>
+                    <p style={{ ...bodyText, fontSize: '0.95rem', lineHeight: 1.7, color: DMI.darkGray }}>
+                      {CASUS_GERARD_DOUSTRAAT.intro}
+                    </p>
                   </div>
-                </WCard>
-              ))}
 
-              <WCard title="Probeer het zelf">
-                <p style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '16px' }}>
-                  Laad de invoerwaarden van de Gerard Doustraat casus in het model om de resultaten zelf te verkennen, of begin met een leeg model.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => { state.resetToGerardDoustraat(); setActiveTab('invoer'); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 20px', borderRadius: '8px', border: 'none',
-                      backgroundColor: DMI.darkBlue, color: DMI.white,
-                      fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-                      fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
-                    }}
-                  >
-                    <MapPin size={16} /> Laad Casus Gerard Doustraat
-                  </button>
-                  <button
-                    onClick={() => { state.resetToBlank(); setActiveTab('invoer'); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 20px', borderRadius: '8px',
-                      border: `2px solid ${DMI.darkBlue}`, backgroundColor: 'transparent',
-                      color: DMI.darkBlue,
-                      fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-                      fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
-                    }}
-                  >
-                    <RotateCcw size={16} /> Begin met leeg model
-                  </button>
+                  {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
+                    <WCard key={sIdx} title={section.title}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {section.paragraphs.map((p, pIdx) => (
+                          <p key={pIdx} style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, whiteSpace: 'pre-line', margin: 0 }}>
+                            {p}
+                          </p>
+                        ))}
+                        {section.tables?.map((table, ti) => (
+                          <HandleidingTableRenderer key={ti} table={table} />
+                        ))}
+                        {section.images && section.images.map((img, iIdx) => (
+                          <figure key={iIdx} style={{ margin: '16px 0 0 0' }}>
+                            <img
+                              src={img.src}
+                              alt={img.alt}
+                              style={{ width: '100%', borderRadius: '8px', border: `1px solid ${DMI.blueTint2}` }}
+                            />
+                            {img.caption && (
+                              <figcaption style={{ ...bodyText, fontSize: '0.75rem', color: DMI.darkGray, marginTop: '8px', fontStyle: 'italic' }}>
+                                {img.caption}
+                              </figcaption>
+                            )}
+                          </figure>
+                        ))}
+                      </div>
+                    </WCard>
+                  ))}
+
+                  <WCard title="Probeer het zelf">
+                    <p style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '16px' }}>
+                      Laad de invoerwaarden van de Gerard Doustraat casus in het model om de resultaten zelf te verkennen, of begin met een leeg model.
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => { state.resetToGerardDoustraat(); setActiveTab('invoer'); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '10px 20px', borderRadius: '8px', border: 'none',
+                          backgroundColor: DMI.darkBlue, color: DMI.white,
+                          fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                          fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                        }}
+                      >
+                        <MapPin size={16} /> Laad Casus Gerard Doustraat
+                      </button>
+                      <button
+                        onClick={() => { state.resetToBlank(); setActiveTab('invoer'); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          padding: '10px 20px', borderRadius: '8px',
+                          border: `2px solid ${DMI.darkBlue}`, backgroundColor: 'transparent',
+                          color: DMI.darkBlue,
+                          fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                          fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                        }}
+                      >
+                        <RotateCcw size={16} /> Begin met leeg model
+                      </button>
+                    </div>
+                  </WCard>
                 </div>
-              </WCard>
+              )}
             </div>
           )}
 
@@ -435,7 +533,7 @@ export default function WebappLayout({
               {/* Welcome header */}
               <div>
                 <h1 style={{ ...heading, fontSize: '1.8rem', marginBottom: '8px' }}>
-                  Ruimtemodel Stadslogistiek
+                  Rekentool Ruimte voor Stadslogistiek
                 </h1>
                 <p style={{ ...bodyText, fontSize: '1rem', maxWidth: '640px', lineHeight: 1.6 }}>
                   Bereken de benodigde laad- en losruimte voor uw stedelijke logistiek op basis van
@@ -444,7 +542,7 @@ export default function WebappLayout({
               </div>
 
               {/* KPI Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: isMobile ? '12px' : '20px' }}>
                 <KpiCard
                   label="Totaal Functies"
                   value={state.totalFunctions}
@@ -479,7 +577,7 @@ export default function WebappLayout({
 
               {/* Configuration summary */}
               <WCard title="Huidige Configuratie">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '16px' : '24px' }}>
                   <div>
                     <p style={{ ...labelMono, marginBottom: '12px' }}>Actieve Functies</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -608,9 +706,9 @@ export default function WebappLayout({
           {/* ---------------------------------------------------------- */}
           {activeTab === 'invoer' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
-                  <h1 style={{ ...heading, fontSize: '1.5rem', marginBottom: '8px' }}>
+                  <h1 style={{ ...heading, fontSize: isMobile ? '1.2rem' : '1.5rem', marginBottom: '8px' }}>
                     Inventarisatie Functies
                   </h1>
                   <p style={{ ...bodyText, fontSize: '0.9rem', maxWidth: '640px', lineHeight: 1.6 }}>
@@ -648,15 +746,17 @@ export default function WebappLayout({
 
               {/* Function inputs grid */}
               <WCard title="Functies">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '0' }}>
-                  {FUNCTIONS.map((func, idx) => (
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(460px, 1fr))', gap: '0' }}>
+                  {state.allFunctions.map((func, idx) => {
+                    const isBuiltIn = FUNCTIONS.some((f) => f.id === func.id);
+                    return (
                     <div
                       key={func.id}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        padding: '14px 16px',
+                        gap: isMobile ? '8px' : '12px',
+                        padding: isMobile ? '10px 12px' : '14px 16px',
                         borderBottom: `1px solid ${DMI.blueTint2}`,
                         backgroundColor: idx % 2 === 0 ? 'transparent' : DMI.blueTint3,
                       }}
@@ -678,7 +778,8 @@ export default function WebappLayout({
                         {func.name}
                       </span>
 
-                      {/* Info tooltip */}
+                      {/* Info tooltip — only for built-in functions with descriptions */}
+                      {isBuiltIn && func.description && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
@@ -710,11 +811,14 @@ export default function WebappLayout({
                           {func.description}
                         </TooltipContent>
                       </Tooltip>
+                      )}
 
-                      {/* Unit label */}
-                      <span style={{ ...labelMono, fontSize: '0.65rem', width: '80px', textAlign: 'right' }}>
-                        {func.unit}
-                      </span>
+                      {/* Unit label - hidden on mobile */}
+                      {!isMobile && (
+                        <span style={{ ...labelMono, fontSize: '0.65rem', width: '80px', textAlign: 'right' }}>
+                          {func.unit}
+                        </span>
+                      )}
 
                       {/* Number input */}
                       <input
@@ -740,7 +844,8 @@ export default function WebappLayout({
                         onBlur={(e) => { e.currentTarget.style.borderColor = DMI.blueTint2; }}
                       />
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Total */}
@@ -877,7 +982,7 @@ export default function WebappLayout({
                 </p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: '24px' }}>
                 {/* Left column: Cluster assignment matrix */}
                 <WCard title="Cluster Toewijzing">
                   <div style={{ overflowX: 'auto' }}>
@@ -1078,8 +1183,8 @@ export default function WebappLayout({
 
               {/* Simulation parameters + run button */}
               <WCard title="Simulatie Instellingen">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: '300px' }}>
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: isMobile ? '0' : '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <span style={{ ...labelMono }}>Aantal Simulaties</span>
                       <span
@@ -1246,7 +1351,7 @@ export default function WebappLayout({
                   </div>
 
                   {/* KPI summary row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: isMobile ? '12px' : '20px' }}>
                     <KpiCard
                       label="Totale Lengte"
                       value={Math.round(state.results.totalSpaceM2 * 10) / 10}
@@ -1287,7 +1392,7 @@ export default function WebappLayout({
 
                   {/* Ruimte per Cluster section */}
                   <WCard title="Ruimte per Cluster">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: '24px' }}>
                       {/* Left: Horizontal bar chart */}
                       <div style={{ height: 280 }}>
                         <ResponsiveContainer width="100%" height="100%">
@@ -1361,7 +1466,7 @@ export default function WebappLayout({
                   </WCard>
 
                   {/* Voertuiganalyse section */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: '24px' }}>
                     {/* Arrivals chart */}
                     <WCard title="Aankomsten per Voertuigtype">
                       <div style={{ height: 300 }}>
@@ -1513,7 +1618,7 @@ export default function WebappLayout({
 
                             {/* Expanded content */}
                             {isExpanded && (
-                              <div style={{ padding: '24px' }}>
+                              <div style={{ padding: isMobile ? '16px 12px' : '24px', overflowX: 'auto' }}>
                                 {/* Service level breakdown */}
                                 <div style={{ marginBottom: '20px' }}>
                                   <p style={{ ...labelMono, marginBottom: '10px' }}>Max Voertuigen per Service Level</p>
@@ -1787,8 +1892,10 @@ export default function WebappLayout({
                     <div
                       style={{
                         display: 'flex',
+                        flexDirection: isMobile ? 'column' : 'row',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
+                        alignItems: isMobile ? 'stretch' : 'center',
+                        gap: isMobile ? '16px' : '0',
                       }}
                     >
                       <div>
@@ -1797,10 +1904,11 @@ export default function WebappLayout({
                           Som van alle clusters op hun respectievelijke service levels
                         </p>
                       </div>
-                      <div style={{ display: 'flex', gap: '16px' }}>
+                      <div style={{ display: 'flex', gap: isMobile ? '12px' : '16px' }}>
                         <div
                           style={{
-                            padding: '16px 32px',
+                            padding: isMobile ? '12px 20px' : '16px 32px',
+                            flex: isMobile ? 1 : 'none',
                             borderRadius: '10px',
                             backgroundColor: DMI.darkBlue,
                             color: DMI.white,
@@ -1830,11 +1938,12 @@ export default function WebappLayout({
                         </div>
                         <div
                           style={{
-                            padding: '16px 32px',
+                            padding: isMobile ? '12px 20px' : '16px 32px',
                             borderRadius: '10px',
                             backgroundColor: DMI.themeLogistics,
                             color: DMI.darkBlue,
                             textAlign: 'center',
+                            flex: isMobile ? 1 : 'none',
                           }}
                         >
                           <div

@@ -21,8 +21,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ruimtemodel Stadslogistiek",
-  description: "Cockpit voor het berekenen van de benodigde ruimte voor logistieke activiteiten",
+  title: "Rekentool Ruimte voor Stadslogistiek",
+  description: "Rekentool voor het berekenen van de benodigde ruimte voor logistieke activiteiten",
 };
 
 export default function RootLayout({

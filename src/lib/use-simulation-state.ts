@@ -78,6 +78,7 @@ export interface SimulationState {
   handleAddVehicle: () => void;
   handleAddDistribution: () => void;
   handleCustomFunctionNameChange: (funcId: string, name: string) => void;
+  handleCustomFunctionUnitChange: (funcId: string, unit: string) => void;
   handleCustomVehicleNameChange: (vehicleId: string, name: string) => void;
   handleCustomDistributionNameChange: (distId: string, name: string) => void;
   handleEnsureProfile: (profileKey: string, numVehicles: number) => void;
@@ -423,6 +424,10 @@ export function useSimulationState(): SimulationState {
     setCustomFunctions((prev) => prev.map((f) => (f.id === funcId ? { ...f, name } : f)));
   }, []);
 
+  const handleCustomFunctionUnitChange = useCallback((funcId: string, unit: string) => {
+    setCustomFunctions((prev) => prev.map((f) => (f.id === funcId ? { ...f, unit } : f)));
+  }, []);
+
   const handleCustomVehicleNameChange = useCallback((vehicleId: string, name: string) => {
     setCustomVehicles((prev) => prev.map((v) => (v.id === vehicleId ? { ...v, name } : v)));
   }, []);
@@ -485,6 +490,7 @@ export function useSimulationState(): SimulationState {
     handleAddVehicle,
     handleAddDistribution,
     handleCustomFunctionNameChange,
+    handleCustomFunctionUnitChange,
     handleCustomVehicleNameChange,
     handleCustomDistributionNameChange,
     handleEnsureProfile,

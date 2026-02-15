@@ -318,7 +318,31 @@ export function AlgemeenEditor({
                       f.name
                     )}
                   </td>
-                  <td style={cellStyle}>{f.unit}</td>
+                  <td style={cellStyle}>
+                    {isCustom ? (
+                      <select
+                        value={f.unit}
+                        onChange={(e) => state.handleCustomFunctionUnitChange(f.id, e.target.value)}
+                        style={{
+                          padding: '4px 8px',
+                          border: `1px solid ${tc.inputBorder}`,
+                          borderRadius: '3px',
+                          fontSize: '0.8rem',
+                          fontFamily: tc.fontFamily,
+                          color: tc.text,
+                          backgroundColor: tc.inputBg,
+                          outline: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <option value="vestigingen">vestigingen</option>
+                        <option value="woningen">woningen</option>
+                        <option value="eenheden">eenheden</option>
+                      </select>
+                    ) : (
+                      f.unit
+                    )}
+                  </td>
                 </tr>
               );
             })}
