@@ -2,8 +2,8 @@
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
-import { VEHICLES, FUNCTIONS } from '@/lib/model-data';
-import { CLUSTER_NAMES, SERVICE_LEVEL_OPTIONS, MAX_CLUSTERS } from '@/lib/dmi-theme';
+import { VEHICLES, LOADING_BAY_WIDTH_M } from '@/lib/model-data';
+import { SERVICE_LEVEL_OPTIONS, MAX_CLUSTERS } from '@/lib/dmi-theme';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, LineChart, Line } from 'recharts';
 import { Loader2, Play } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
@@ -281,11 +281,11 @@ export default function RebelExcelLayout({
   const clusterSpaceData = useMemo(() => {
     if (!results) return [];
     return results.clusterResults.map((cr) => ({
-      name: `Cluster ${cr.clusterId}${CLUSTER_NAMES[cr.clusterId] ? ` - ${CLUSTER_NAMES[cr.clusterId]}` : ''}`,
+      name: state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`,
       space: Math.round(cr.totalSpaceM2),
       clusterId: cr.clusterId,
     }));
-  }, [results]);
+  }, [results, state.clusterNames]);
 
   const maxFunctionCount = useMemo(() => {
     return Math.max(1, ...Object.values(functionCounts));
@@ -560,12 +560,22 @@ export default function RebelExcelLayout({
 
           {handleidingSubTab === 'casus' && (
             <div style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.85rem', color: REBEL.textDark, lineHeight: 1.7 }}>
-              <p style={{ fontSize: '0.95rem', marginBottom: '8px' }}>
-                {CASUS_GERARD_DOUSTRAAT.subtitle}
-              </p>
-              <p style={{ fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '24px' }}>
-                {CASUS_GERARD_DOUSTRAAT.intro}
-              </p>
+              <div
+                style={{
+                  backgroundColor: REBEL.white,
+                  border: `1px solid ${REBEL.border}`,
+                  borderRadius: '4px',
+                  padding: '16px 20px',
+                  marginBottom: '12px',
+                }}
+              >
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: REBEL.coral, marginBottom: '10px' }}>
+                  {CASUS_GERARD_DOUSTRAAT.subtitle}
+                </h3>
+                <p style={{ whiteSpace: 'pre-line', marginBottom: 0 }}>
+                  {CASUS_GERARD_DOUSTRAAT.intro}
+                </p>
+              </div>
 
               {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
                 <div
@@ -591,10 +601,12 @@ export default function RebelExcelLayout({
                   ))}
                   {section.images && section.images.map((img, iIdx) => (
                     <figure key={iIdx} style={{ margin: '12px 0 0 0' }}>
-                      <img
+                      <Image
                         src={img.src}
                         alt={img.alt}
-                        style={{ width: '100%', borderRadius: '4px', border: `1px solid ${REBEL.border}` }}
+                        width={1200}
+                        height={675}
+                        style={{ width: '100%', height: 'auto', borderRadius: '4px', border: `1px solid ${REBEL.border}` }}
                       />
                       {img.caption && (
                         <figcaption style={{ fontSize: '0.75rem', color: REBEL.tabInactive, marginTop: '6px', fontStyle: 'italic' }}>
@@ -764,7 +776,7 @@ export default function RebelExcelLayout({
           />
           <KpiCard
             label="Benodigde Oppervlakte Laden & Lossen (m&sup2;)"
-            value={results ? Math.round(results.totalSpaceM2 * 3).toLocaleString('nl-NL') : '--'}
+            value={results ? Math.round(results.totalSpaceM2 * LOADING_BAY_WIDTH_M).toLocaleString('nl-NL') : '--'}
             suffix=""
           />
         </div>
@@ -1249,6 +1261,21 @@ export default function RebelExcelLayout({
                     >
                       C{cid}:
                     </span>
+                    <input
+                      type="text"
+                      placeholder="Naam..."
+                      value={state.clusterNames[cid] || ''}
+                      onChange={(e) => state.handleClusterNameChange(cid, e.target.value)}
+                      style={{
+                        padding: '1px 3px',
+                        border: `1px solid ${REBEL.border}`,
+                        fontSize: '0.6rem',
+                        color: REBEL.textDark,
+                        fontFamily: 'Calibri, Arial, sans-serif',
+                        backgroundColor: REBEL.white,
+                        width: '75px',
+                      }}
+                    />
                     <select
                       value={String(clusterServiceLevels[cid] ?? 0.95)}
                       onChange={(e) => handleServiceLevelChange(cid, e.target.value)}
@@ -1352,6 +1379,11 @@ export default function RebelExcelLayout({
                 )}
               </button>
             </div>
+            {state.simulationError && (
+              <div style={{ marginTop: 8, padding: '8px 12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 4, color: '#991b1b', fontSize: '0.8rem' }}>
+                {state.simulationError}
+              </div>
+            )}
           </ExcelPanel>
         </div>
 
@@ -1400,12 +1432,7 @@ export default function RebelExcelLayout({
                           color: REBEL.textDark,
                         }}
                       >
-                        Cluster {cr.clusterId}
-                        {CLUSTER_NAMES[cr.clusterId] && (
-                          <span style={{ fontWeight: 400, marginLeft: '6px', fontSize: '0.8rem', color: REBEL.tabInactive }}>
-                            ({CLUSTER_NAMES[cr.clusterId]})
-                          </span>
-                        )}
+                        {state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`}
                       </span>
                       <span
                         style={{

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { LayoutType } from '@/lib/use-simulation-state';
 import { useIsMobile } from '@/lib/useIsMobile';
 
@@ -38,7 +38,17 @@ export default function LayoutSwitcher({
 }) {
   const { isMobile } = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 12, y: 12 });
+  const [position, setPosition] = useState(() => {
+    if (typeof window === 'undefined') return { x: 12, y: 12 };
+    const saved = loadPosition();
+    if (saved) {
+      return {
+        x: Math.max(0, Math.min(saved.x, window.innerWidth - 200)),
+        y: Math.max(0, Math.min(saved.y, window.innerHeight - 40)),
+      };
+    }
+    return { x: window.innerWidth - 280, y: 12 };
+  });
   const [dragging, setDragging] = useState(false);
   const [hovered, setHovered] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -78,19 +88,6 @@ export default function LayoutSwitcher({
     }
   }, [dragging]);
 
-  // Restore saved position or default to top-right (desktop only)
-  useEffect(() => {
-    if (isMobile) return;
-    const saved = loadPosition();
-    if (saved) {
-      // Clamp to current viewport so it's never off-screen
-      const x = Math.max(0, Math.min(saved.x, window.innerWidth - 200));
-      const y = Math.max(0, Math.min(saved.y, window.innerHeight - 40));
-      setPosition({ x, y });
-    } else {
-      setPosition({ x: window.innerWidth - 280, y: 12 });
-    }
-  }, [isMobile]);
 
   const isActive = hovered || dragging;
 

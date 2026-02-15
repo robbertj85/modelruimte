@@ -270,7 +270,7 @@ function DiagramSimulationProcess({ theme: t }: { theme: DiagramTheme }) {
     'bijv. 362 woningen \u00D7\n1,43 stops/week \u00F7 6 dagen',
     'Fiets \u2192 LEVV \u2192 Bestel \u2192\nVracht \u2192 Groot \u2192 Service',
     'Willekeurige aankomsten\nper dagdeel (4 perioden)',
-    'Cluster 1: licht, Cluster 2:\nzwaar, Cluster 3: service',
+    'Cluster 1, 2, 3:\ngebruiker-configureerbaar',
     'Totaal meters L&L ruimte\nper cluster en totaal',
   ];
 
@@ -352,21 +352,34 @@ const ALLOCATION_PHASES: { label: string; allocation: ClusterAllocation }[] = [
     allocation: { V1: 1, V2: 1, V3: 2, V4: 2, V5: 2, V6: 3 },
   },
   {
-    label: 'Service samengevoegd met zwaar verkeer',
+    label: '2 clusters: samengevoegd',
     allocation: { V1: 1, V2: 1, V3: 2, V4: 2, V5: 2, V6: 2 },
   },
   {
-    label: 'LEVV verplaatst naar zwaar verkeer',
-    allocation: { V1: 1, V2: 2, V3: 2, V4: 2, V5: 2, V6: 3 },
+    label: '1 cluster: alles samen',
+    allocation: { V1: 1, V2: 1, V3: 1, V4: 1, V5: 1, V6: 1 },
   },
 ];
 
 function computeClusterSpace(allocation: ClusterAllocation, vehicles: VehicleDef[]): Record<number, number> {
-  const space: Record<number, number> = {};
+  // Group vehicles by cluster
+  const groups: Record<number, VehicleDef[]> = {};
   for (const v of vehicles) {
     const cId = allocation[v.id];
     if (cId == null) continue;
-    space[cId] = (space[cId] || 0) + v.peakVehicles * v.length;
+    if (!groups[cId]) groups[cId] = [];
+    groups[cId].push(v);
+  }
+  // Diversification: combining vehicle types in one cluster reduces the combined
+  // peak because their peaks don't all coincide (Monte Carlo effect).
+  // With N vehicle types sharing a cluster, the 95th-percentile of the combined
+  // demand is lower than the sum of individual 95th-percentiles.
+  const space: Record<number, number> = {};
+  for (const [cIdStr, vecs] of Object.entries(groups)) {
+    const rawSum = vecs.reduce((sum, v) => sum + v.peakVehicles * v.length, 0);
+    const n = vecs.length;
+    const factor = n > 1 ? 0.5 + 0.5 / Math.sqrt(n) : 1;
+    space[Number(cIdStr)] = Math.round(rawSum * factor);
   }
   return space;
 }
@@ -546,9 +559,9 @@ function DiagramClusterServiceLevel({ theme: t }: { theme: DiagramTheme }) {
   const h = 300;
 
   const clusters = [
-    { name: 'Cluster 1', sub: 'Licht verkeer', vehicles: ['Fiets/cargobike', 'LEVV/personenwagen'], color: c.cat1, x: 30 },
-    { name: 'Cluster 2', sub: 'Zwaar verkeer', vehicles: ['Bestelwagen', 'Vrachtwagen N2', 'Vrachtwagen N3'], color: c.cat2, x: 185 },
-    { name: 'Cluster 3', sub: 'Service', vehicles: ['Service bestelwagen'], color: c.cat3, x: 355 },
+    { name: 'Cluster 1', vehicles: ['Fiets/cargobike', 'LEVV/personenwagen'], color: c.cat1, x: 30 },
+    { name: 'Cluster 2', vehicles: ['Bestelwagen', 'Vrachtwagen N2', 'Vrachtwagen N3'], color: c.cat2, x: 185 },
+    { name: 'Cluster 3', vehicles: ['Service bestelwagen'], color: c.cat3, x: 355 },
   ];
 
   const headerText = (color: string) =>
@@ -571,8 +584,7 @@ function DiagramClusterServiceLevel({ theme: t }: { theme: DiagramTheme }) {
         return (
           <g key={cl.name}>
             <rect x={cl.x} y={35} width={125} height={32} rx={5} fill={cl.color} />
-            <text x={cl.x + 62.5} y={50} textAnchor="middle" fill={ht} fontSize={11} fontWeight={700} fontFamily={c.font}>{cl.name}</text>
-            <text x={cl.x + 62.5} y={62} textAnchor="middle" fill={ht === c.dark ? c.mid : 'rgba(255,255,255,0.75)'} fontSize={9} fontFamily={c.font}>{cl.sub}</text>
+            <text x={cl.x + 62.5} y={55} textAnchor="middle" fill={ht} fontSize={11} fontWeight={700} fontFamily={c.font}>{cl.name}</text>
 
             {cl.vehicles.map((v, vi) => (
               <g key={v}>

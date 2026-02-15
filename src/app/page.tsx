@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useSimulationState, type LayoutType } from '@/lib/use-simulation-state';
-import DmiCockpitLayout from '@/components/layouts/DmiCockpitLayout';
-import RebelExcelLayout from '@/components/layouts/RebelExcelLayout';
-import WebappLayout from '@/components/layouts/WebappLayout';
+
+const DmiCockpitLayout = dynamic(() => import('@/components/layouts/DmiCockpitLayout'), { ssr: false });
+const RebelExcelLayout = dynamic(() => import('@/components/layouts/RebelExcelLayout'), { ssr: false });
+const WebappLayout = dynamic(() => import('@/components/layouts/WebappLayout'), { ssr: false });
 
 export default function Home() {
   const [layout, setLayout] = useState<LayoutType>('dmi');

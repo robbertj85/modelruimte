@@ -409,13 +409,10 @@ export function DeliveryProfileEditor({
 }) {
   const tc = getThemeColors(theme);
   const func = state.allFunctions.find((f) => f.id === functionId);
-  if (!func) return null;
-
-  const vehicles = state.allVehicles;
-  const numVehicles = vehicles.length;
 
   // Find all profile keys for this function (existing + potential for all distributions)
   const profileEntries = useMemo(() => {
+    if (!func) return [];
     const entries: { profileKey: string; distName: string; distId: string }[] = [];
     for (const dist of state.allDistributions) {
       const key = `${functionId}_${dist.id}`;
@@ -426,15 +423,21 @@ export function DeliveryProfileEditor({
       }
     }
     return entries;
-  }, [functionId, state.allDistributions, state.deliveryProfiles]);
+  }, [func, functionId, state.allDistributions, state.deliveryProfiles]);
 
   // Distributions that don't have a profile yet (for "add" button)
   const availableDistributions = useMemo(() => {
+    if (!func) return [];
     return state.allDistributions.filter((d) => {
       const key = `${functionId}_${d.id}`;
       return !state.deliveryProfiles[key] && !DELIVERY_PROFILES[key];
     });
-  }, [functionId, state.allDistributions, state.deliveryProfiles]);
+  }, [func, functionId, state.allDistributions, state.deliveryProfiles]);
+
+  if (!func) return null;
+
+  const vehicles = state.allVehicles;
+  const numVehicles = vehicles.length;
 
   const cellStyle: React.CSSProperties = {
     padding: '4px 6px',

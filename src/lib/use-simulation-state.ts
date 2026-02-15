@@ -37,7 +37,9 @@ export interface SimulationState {
   // State
   isRunning: boolean;
   results: SimulationResult | null;
+  simulationError: string | null;
   expandedClusters: Record<number, boolean>;
+  clusterNames: Record<number, string>;
 
   // Derived
   clusterIds: number[];
@@ -61,6 +63,7 @@ export interface SimulationState {
   handleFunctionCountChange: (funcId: string, value: string) => void;
   handleClusterMatrixChange: (vehicleId: string, clusterId: number) => void;
   handleServiceLevelChange: (clusterId: number, value: string) => void;
+  handleClusterNameChange: (clusterId: number, name: string) => void;
   handleRun: () => void;
   toggleCluster: (clusterId: number) => void;
   setNumSimulations: (n: number) => void;
@@ -113,7 +116,9 @@ export function useSimulationState(): SimulationState {
   const [numSimulations, setNumSimulations] = useState(SIM_PARAMS.numSimulations);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<SimulationResult | null>(null);
+  const [simulationError, setSimulationError] = useState<string | null>(null);
   const [expandedClusters, setExpandedClusters] = useState<Record<number, boolean>>({});
+  const [clusterNames, setClusterNames] = useState<Record<number, string>>({});
 
   // Advanced parameter state
   const [vehicleLengths, setVehicleLengths] = useState<Record<string, number>>(getDefaultVehicleLengths);
@@ -235,6 +240,20 @@ export function useSimulationState(): SimulationState {
     []
   );
 
+  const handleClusterNameChange = useCallback(
+    (clusterId: number, name: string) => {
+      setClusterNames((prev) => {
+        if (name.trim() === '') {
+          const next = { ...prev };
+          delete next[clusterId];
+          return next;
+        }
+        return { ...prev, [clusterId]: name };
+      });
+    },
+    []
+  );
+
   const workerRef = useRef<Worker | null>(null);
   const isRunningRef = useRef(false);
 
@@ -252,6 +271,7 @@ export function useSimulationState(): SimulationState {
     if (isRunningRef.current) return;
     isRunningRef.current = true;
     setIsRunning(true);
+    setSimulationError(null);
 
     // Terminate any previous worker
     if (workerRef.current) {
@@ -267,7 +287,7 @@ export function useSimulationState(): SimulationState {
       if (e.data.type === 'result' && e.data.data) {
         setResults(e.data.data);
       } else if (e.data.type === 'error') {
-        console.error('Simulation error:', e.data.message);
+        setSimulationError(e.data.message ?? 'Simulatie mislukt');
       }
       setIsRunning(false);
       isRunningRef.current = false;
@@ -275,8 +295,8 @@ export function useSimulationState(): SimulationState {
       workerRef.current = null;
     };
 
-    worker.onerror = (err) => {
-      console.error('Simulation worker error:', err);
+    worker.onerror = () => {
+      setSimulationError('Simulatie worker is onverwacht gestopt');
       setIsRunning(false);
       isRunningRef.current = false;
       worker.terminate();
@@ -400,7 +420,7 @@ export function useSimulationState(): SimulationState {
       // Extend all existing delivery profiles with a zero entry for the new vehicle
       setDeliveryProfiles((prevProfiles) => {
         const updated = deepCloneProfiles(prevProfiles);
-        for (const [key, profile] of Object.entries(updated)) {
+        for (const [, profile] of Object.entries(updated)) {
           profile.stopsPerWeekPerUnit.push(0);
           profile.duration.push(0);
           profile.periodDistribution.push([0, 0, 0, 0]);
@@ -457,7 +477,9 @@ export function useSimulationState(): SimulationState {
     numSimulations,
     isRunning,
     results,
+    simulationError,
     expandedClusters,
+    clusterNames,
     clusterIds,
     totalFunctions,
     computedTotalVehicles,
@@ -475,6 +497,7 @@ export function useSimulationState(): SimulationState {
     handleFunctionCountChange,
     handleClusterMatrixChange,
     handleServiceLevelChange,
+    handleClusterNameChange,
     handleRun,
     toggleCluster,
     setNumSimulations,

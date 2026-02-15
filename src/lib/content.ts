@@ -117,7 +117,7 @@ export const COVER = {
     'Om stedenbouwkundigen, beleidsadviseurs en vastgoedontwikkelaars een beter inzicht te geven in het ruimtebeslag van deze logistieke activiteiten, is de Rekentool Ruimte voor Stadslogistiek ontwikkeld. Dit is een eerste prototype van een model dat de ruimtevraag van stadslogistieke voertuigen in beeld brengt, met onderscheid in type voertuigen en tijdsvensters.',
   ],
   license: {
-    label: 'Licentie',
+    label: 'LICENTIE',
     text: 'Deze tool is open source beschikbaar onder de EUPL-1.2 licentie. Gemeenten, universiteiten, hogescholen en andere partijen kunnen het model vrij gebruiken, testen en verder aanvullen.',
   },
   projectLabel: 'Een samenwerking van:',

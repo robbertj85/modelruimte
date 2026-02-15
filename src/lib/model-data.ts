@@ -1,3 +1,6 @@
+// Loading bay assumed width (meters) for converting length to area
+export const LOADING_BAY_WIDTH_M = 3;
+
 // Vehicle types
 export const VEHICLES = [
   { id: 'V1', name: 'Fiets, cargobike, scooter', length: 2 },

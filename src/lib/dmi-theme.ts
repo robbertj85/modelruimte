@@ -32,12 +32,6 @@ export const CLUSTER_COLORS: Record<number, string> = {
   7: DMI.blueTint1,
 };
 
-export const CLUSTER_NAMES: Record<number, string> = {
-  1: 'Licht vervoer',
-  2: 'Zwaar vervoer',
-  3: 'Service voertuigen',
-};
-
 export const SERVICE_LEVEL_OPTIONS = [
   { value: '0.75', label: '75%' },
   { value: '0.80', label: '80%' },
