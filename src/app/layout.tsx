@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Sans_Condensed, IBM_Plex_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -37,6 +38,7 @@ export default function RootLayout({
         style={{ fontFamily: 'var(--font-ibm-plex-sans), sans-serif' }}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
