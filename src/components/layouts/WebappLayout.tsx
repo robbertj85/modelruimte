@@ -1594,7 +1594,7 @@ export default function WebappLayout({
                   {/* Cluster Details */}
                   <div>
                     <h2 style={{ ...heading, fontSize: '1.2rem', marginBottom: '16px' }}>Details per Cluster</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', alignItems: 'start' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', alignItems: 'stretch' }}>
                       {state.results.clusterResults.map((cr) => {
                         const vehiclesInCluster = state.results!.vehicleResults.filter(
                           (vr) => vr.clusterId === cr.clusterId
