@@ -1662,50 +1662,53 @@ export default function WebappLayout({
                             {/* Expanded content */}
                             {isExpanded && (
                               <div style={{ padding: isMobile ? '16px 12px' : '24px', overflowX: 'auto' }}>
-                                {/* Service level breakdown */}
-                                <div style={{ marginBottom: '20px' }}>
-                                  <p style={{ ...labelMono, marginBottom: '10px' }}>Max Voertuigen per Service Level</p>
-                                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                    {SERVICE_LEVEL_OPTIONS.map((opt) => {
-                                      const slKey = Math.round(parseFloat(opt.value) * 100);
-                                      const val = cr.maxVehiclesPerServiceLevel[slKey];
-                                      const isActive = cr.serviceLevel === parseFloat(opt.value);
-                                      return (
-                                        <div
-                                          key={opt.value}
-                                          style={{
-                                            padding: '10px 16px',
-                                            borderRadius: '8px',
-                                            backgroundColor: isActive ? `${CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}20` : DMI.blueTint3,
-                                            border: isActive ? `2px solid ${CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}` : `1px solid ${DMI.blueTint2}`,
-                                            textAlign: 'center',
-                                            minWidth: '80px',
-                                          }}
-                                        >
-                                          <div style={{ ...labelMono, fontSize: '0.6rem', marginBottom: '4px' }}>
-                                            {opt.label}
-                                          </div>
-                                          <div
-                                            style={{
-                                              fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                              fontWeight: 700,
-                                              fontSize: '1rem',
-                                              color: DMI.darkBlue,
-                                            }}
-                                          >
-                                            {val !== undefined ? Math.round(val * 100) / 100 : '-'}
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                                {/* Compact vehicle table */}
+                                <table
+                                  style={{
+                                    width: '100%',
+                                    borderCollapse: 'collapse',
+                                    fontSize: '0.8rem',
+                                  }}
+                                >
+                                  <thead>
+                                    <tr>
+                                      <th style={{ ...labelMono, fontSize: '0.6rem', textAlign: 'left', padding: '6px 8px', borderBottom: `2px solid ${DMI.blueTint2}` }}>Voertuigtype</th>
+                                      <th style={{ ...labelMono, fontSize: '0.6rem', textAlign: 'right', padding: '6px 8px', borderBottom: `2px solid ${DMI.blueTint2}` }}>Lengte (m)</th>
+                                      <th style={{ ...labelMono, fontSize: '0.6rem', textAlign: 'right', padding: '6px 8px', borderBottom: `2px solid ${DMI.blueTint2}` }}>Aankomsten/dag</th>
+                                      <th style={{ ...labelMono, fontSize: '0.6rem', textAlign: 'right', padding: '6px 8px', borderBottom: `2px solid ${DMI.blueTint2}` }}>Max gelijktijdig</th>
+                                      <th style={{ ...labelMono, fontSize: '0.6rem', textAlign: 'right', padding: '6px 8px', borderBottom: `2px solid ${DMI.blueTint2}` }}>Ruimte (m)</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {vehiclesInCluster.map((vr) => (
+                                      <tr key={vr.vehicleId}>
+                                        <td style={{ ...bodyText, fontSize: '0.8rem', padding: '6px 8px', borderBottom: `1px solid ${DMI.blueTint3}` }}>{vr.vehicleName}</td>
+                                        <td style={{ ...bodyText, fontSize: '0.8rem', textAlign: 'right', padding: '6px 8px', borderBottom: `1px solid ${DMI.blueTint3}` }}>{vr.vehicleLength}</td>
+                                        <td style={{ ...bodyText, fontSize: '0.8rem', textAlign: 'right', padding: '6px 8px', borderBottom: `1px solid ${DMI.blueTint3}` }}>{vr.totalArrivalsPerDay.toLocaleString('nl-NL', { maximumFractionDigits: 1 })}</td>
+                                        <td style={{ ...bodyText, fontSize: '0.8rem', textAlign: 'right', padding: '6px 8px', borderBottom: `1px solid ${DMI.blueTint3}`, fontWeight: 600 }}>
+                                          {vr.maxVehiclesPerServiceLevel[Math.round((state.clusterServiceLevels[vr.clusterId] ?? 0.95) * 100)] ?? '-'}
+                                        </td>
+                                        <td style={{ ...bodyText, fontSize: '0.8rem', textAlign: 'right', padding: '6px 8px', borderBottom: `1px solid ${DMI.blueTint3}`, fontWeight: 700, color: DMI.darkBlue }}>{vr.requiredSpaceM2.toLocaleString('nl-NL')}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                  <tfoot>
+                                    <tr>
+                                      <td colSpan={4} style={{ ...heading, fontSize: '0.8rem', padding: '8px 8px', borderTop: `2px solid ${DMI.darkBlue}` }}>
+                                        Totaal Cluster {cr.clusterId}
+                                      </td>
+                                      <td style={{ ...heading, fontSize: '0.9rem', textAlign: 'right', padding: '8px 8px', borderTop: `2px solid ${DMI.darkBlue}` }}>
+                                        {Math.round(cr.totalSpaceM2).toLocaleString('nl-NL')} m
+                                      </td>
+                                    </tr>
+                                  </tfoot>
+                                </table>
 
                                 {/* Service Level Curve */}
                                 {clusterServiceLevelCurves[cr.clusterId]?.length > 0 && (
-                                  <div style={{ marginBottom: '20px' }}>
-                                    <p style={{ ...labelMono, marginBottom: '10px' }}>Service Level Curve</p>
-                                    <div style={{ width: '100%', height: 200 }}>
+                                  <div style={{ marginTop: '16px' }}>
+                                    <p style={{ ...labelMono, marginBottom: '6px' }}>Service Level Curve</p>
+                                    <div style={{ width: '100%', height: 180 }}>
                                       <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={clusterServiceLevelCurves[cr.clusterId]} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
                                           <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
@@ -1736,228 +1739,6 @@ export default function WebappLayout({
                                     </div>
                                   </div>
                                 )}
-
-                                {/* Vehicle detail table */}
-                                <div>
-                                  <p style={{ ...labelMono, marginBottom: '10px' }}>Voertuigen in dit Cluster</p>
-                                  <table
-                                    style={{
-                                      width: '100%',
-                                      borderCollapse: 'collapse',
-                                      fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
-                                      fontSize: '0.85rem',
-                                    }}
-                                  >
-                                    <thead>
-                                      <tr style={{ backgroundColor: DMI.blueTint3 }}>
-                                        <th
-                                          style={{
-                                            textAlign: 'left',
-                                            padding: '10px 12px',
-                                            borderBottom: `2px solid ${DMI.darkBlue}`,
-                                            ...labelMono,
-                                            fontSize: '0.6rem',
-                                          }}
-                                        >
-                                          Voertuig
-                                        </th>
-                                        <th
-                                          style={{
-                                            textAlign: 'right',
-                                            padding: '10px 12px',
-                                            borderBottom: `2px solid ${DMI.darkBlue}`,
-                                            ...labelMono,
-                                            fontSize: '0.6rem',
-                                          }}
-                                        >
-                                          Lengte
-                                        </th>
-                                        <th
-                                          style={{
-                                            textAlign: 'right',
-                                            padding: '10px 12px',
-                                            borderBottom: `2px solid ${DMI.darkBlue}`,
-                                            ...labelMono,
-                                            fontSize: '0.6rem',
-                                          }}
-                                        >
-                                          Aankomsten/dag
-                                        </th>
-                                        {SERVICE_LEVEL_OPTIONS.map((opt) => (
-                                          <th
-                                            key={opt.value}
-                                            style={{
-                                              textAlign: 'right',
-                                              padding: '10px 12px',
-                                              borderBottom: `2px solid ${DMI.darkBlue}`,
-                                              ...labelMono,
-                                              fontSize: '0.6rem',
-                                              backgroundColor:
-                                                cr.serviceLevel === parseFloat(opt.value)
-                                                  ? `${CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}15`
-                                                  : 'transparent',
-                                            }}
-                                          >
-                                            Max @ {opt.label}
-                                          </th>
-                                        ))}
-                                        <th
-                                          style={{
-                                            textAlign: 'right',
-                                            padding: '10px 12px',
-                                            borderBottom: `2px solid ${DMI.darkBlue}`,
-                                            ...labelMono,
-                                            fontSize: '0.6rem',
-                                          }}
-                                        >
-                                          Ruimte (m)
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {vehiclesInCluster.map((vr, vIdx) => (
-                                        <tr
-                                          key={vr.vehicleId}
-                                          style={{
-                                            backgroundColor: vIdx % 2 === 0 ? 'transparent' : DMI.blueTint3,
-                                          }}
-                                        >
-                                          <td
-                                            style={{
-                                              padding: '10px 12px',
-                                              borderBottom: `1px solid ${DMI.blueTint2}`,
-                                              color: DMI.darkBlue,
-                                              fontWeight: 500,
-                                            }}
-                                          >
-                                            {vr.vehicleName}
-                                          </td>
-                                          <td
-                                            style={{
-                                              textAlign: 'right',
-                                              padding: '10px 12px',
-                                              borderBottom: `1px solid ${DMI.blueTint2}`,
-                                              fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                              color: DMI.darkGray,
-                                            }}
-                                          >
-                                            {vr.vehicleLength} m
-                                          </td>
-                                          <td
-                                            style={{
-                                              textAlign: 'right',
-                                              padding: '10px 12px',
-                                              borderBottom: `1px solid ${DMI.blueTint2}`,
-                                              fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                              color: DMI.darkGray,
-                                            }}
-                                          >
-                                            {vr.totalArrivalsPerDay}
-                                          </td>
-                                          {SERVICE_LEVEL_OPTIONS.map((opt) => {
-                                            const slKey = Math.round(parseFloat(opt.value) * 100);
-                                            const val = vr.maxVehiclesPerServiceLevel[slKey];
-                                            const isActiveLevel = cr.serviceLevel === parseFloat(opt.value);
-                                            return (
-                                              <td
-                                                key={opt.value}
-                                                style={{
-                                                  textAlign: 'right',
-                                                  padding: '10px 12px',
-                                                  borderBottom: `1px solid ${DMI.blueTint2}`,
-                                                  fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                                  color: DMI.darkGray,
-                                                  fontWeight: isActiveLevel ? 700 : 400,
-                                                  backgroundColor: isActiveLevel
-                                                    ? `${CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}10`
-                                                    : 'transparent',
-                                                }}
-                                              >
-                                                {val !== undefined ? Math.round(val * 100) / 100 : '-'}
-                                              </td>
-                                            );
-                                          })}
-                                          <td
-                                            style={{
-                                              textAlign: 'right',
-                                              padding: '10px 12px',
-                                              borderBottom: `1px solid ${DMI.blueTint2}`,
-                                              fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                              fontWeight: 700,
-                                              color: DMI.darkBlue,
-                                            }}
-                                          >
-                                            {Math.round(vr.requiredSpaceM2 * 10) / 10}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                      {/* Cluster total row */}
-                                      <tr style={{ backgroundColor: DMI.blueTint2 }}>
-                                        <td
-                                          style={{
-                                            padding: '10px 12px',
-                                            fontWeight: 700,
-                                            color: DMI.darkBlue,
-                                            borderBottom: 'none',
-                                          }}
-                                          colSpan={2}
-                                        >
-                                          Totaal cluster
-                                        </td>
-                                        <td
-                                          style={{
-                                            textAlign: 'right',
-                                            padding: '10px 12px',
-                                            fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                            fontWeight: 700,
-                                            color: DMI.darkBlue,
-                                            borderBottom: 'none',
-                                          }}
-                                        >
-                                          {Math.round(
-                                            vehiclesInCluster.reduce((sum, vr) => sum + vr.totalArrivalsPerDay, 0) * 100
-                                          ) / 100}
-                                        </td>
-                                        {SERVICE_LEVEL_OPTIONS.map((opt) => {
-                                          const slKey = Math.round(parseFloat(opt.value) * 100);
-                                          const clusterVal = cr.maxVehiclesPerServiceLevel[slKey];
-                                          const isActiveLevel = cr.serviceLevel === parseFloat(opt.value);
-                                          return (
-                                            <td
-                                              key={opt.value}
-                                              style={{
-                                                textAlign: 'right',
-                                                padding: '10px 12px',
-                                                fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                                fontWeight: 700,
-                                                color: DMI.darkBlue,
-                                                borderBottom: 'none',
-                                                backgroundColor: isActiveLevel
-                                                  ? `${CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}20`
-                                                  : 'transparent',
-                                              }}
-                                            >
-                                              {clusterVal !== undefined ? Math.round(clusterVal * 100) / 100 : '-'}
-                                            </td>
-                                          );
-                                        })}
-                                        <td
-                                          style={{
-                                            textAlign: 'right',
-                                            padding: '10px 12px',
-                                            fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                            fontWeight: 700,
-                                            fontSize: '1rem',
-                                            color: DMI.darkBlue,
-                                            borderBottom: 'none',
-                                          }}
-                                        >
-                                          {Math.round(cr.totalSpaceM2 * 10) / 10}
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </div>
                               </div>
                             )}
                           </div>
