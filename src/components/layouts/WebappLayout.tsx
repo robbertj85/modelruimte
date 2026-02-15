@@ -1591,12 +1591,11 @@ export default function WebappLayout({
                     </div>
                   </WCard>
 
-                  {/* Cluster Details (expandable) */}
+                  {/* Cluster Details */}
                   <div>
-                    <h2 style={{ ...heading, fontSize: '1.2rem', marginBottom: '16px' }}>Cluster Details</h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <h2 style={{ ...heading, fontSize: '1.2rem', marginBottom: '16px' }}>Details per Cluster</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', alignItems: 'start' }}>
                       {state.results.clusterResults.map((cr) => {
-                        const isExpanded = state.expandedClusters[cr.clusterId] ?? false;
                         const vehiclesInCluster = state.results!.vehicleResults.filter(
                           (vr) => vr.clusterId === cr.clusterId
                         );
@@ -1608,34 +1607,29 @@ export default function WebappLayout({
                               borderRadius: '12px',
                               boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)',
                               overflow: 'hidden',
+                              borderLeft: `4px solid ${CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}`,
                             }}
                           >
-                            {/* Cluster header (clickable) */}
-                            <button
-                              onClick={() => state.toggleCluster(cr.clusterId)}
+                            {/* Cluster header */}
+                            <div
                               style={{
-                                width: '100%',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                padding: '16px 24px',
-                                border: 'none',
-                                background: 'none',
-                                cursor: 'pointer',
-                                borderBottom: isExpanded ? `1px solid ${DMI.blueTint2}` : 'none',
-                                borderLeft: `4px solid ${CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}`,
+                                padding: '12px 16px',
+                                borderBottom: `1px solid ${DMI.blueTint2}`,
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ ...heading, fontSize: '1rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ ...heading, fontSize: '0.95rem' }}>
                                   {state.clusterNames[cr.clusterId] || `Cluster ${cr.clusterId}`}
                                 </span>
                                 <span
                                   style={{
-                                    padding: '2px 10px',
+                                    padding: '2px 8px',
                                     borderRadius: '12px',
                                     backgroundColor: DMI.blueTint2,
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.7rem',
                                     fontFamily: 'var(--font-ibm-plex-mono), monospace',
                                     color: DMI.darkBlue,
                                     fontWeight: 600,
@@ -1644,26 +1638,22 @@ export default function WebappLayout({
                                   SL {(cr.serviceLevel * 100).toFixed(0)}%
                                 </span>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <span
-                                  style={{
-                                    fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                    fontWeight: 700,
-                                    fontSize: '1.1rem',
-                                    color: DMI.darkBlue,
-                                  }}
-                                >
-                                  {Math.round(cr.totalSpaceM2 * 10) / 10} m
-                                </span>
-                                {isExpanded ? <ChevronUp size={20} color={DMI.darkGray} /> : <ChevronDown size={20} color={DMI.darkGray} />}
-                              </div>
-                            </button>
+                              <span
+                                style={{
+                                  fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                                  fontWeight: 700,
+                                  fontSize: '1.05rem',
+                                  color: DMI.darkBlue,
+                                }}
+                              >
+                                {Math.round(cr.totalSpaceM2 * 10) / 10} m
+                              </span>
+                            </div>
 
-                            {/* Expanded content */}
-                            {isExpanded && (
-                              <div style={{ padding: isMobile ? '16px 12px' : '24px', overflowX: 'auto' }}>
-                                {/* Compact vehicle table */}
-                                <table
+                            {/* Content */}
+                            <div style={{ padding: '16px' }}>
+                              {/* Compact vehicle table */}
+                              <table
                                   style={{
                                     width: '100%',
                                     borderCollapse: 'collapse',
@@ -1704,43 +1694,42 @@ export default function WebappLayout({
                                   </tfoot>
                                 </table>
 
-                                {/* Service Level Curve */}
-                                {clusterServiceLevelCurves[cr.clusterId]?.length > 0 && (
-                                  <div style={{ marginTop: '16px' }}>
-                                    <p style={{ ...labelMono, marginBottom: '6px' }}>Service Level Curve</p>
-                                    <div style={{ width: '100%', height: 180 }}>
-                                      <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={clusterServiceLevelCurves[cr.clusterId]} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
-                                          <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
-                                          <XAxis
-                                            dataKey="serviceLevel"
-                                            tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
-                                            axisLine={{ stroke: DMI.blueTint2 }}
-                                            label={{ value: 'SL %', position: 'insideBottomRight', offset: -3, style: { fontSize: 10, fill: DMI.darkGray } }}
-                                          />
-                                          <YAxis
-                                            tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
-                                            axisLine={{ stroke: DMI.blueTint2 }}
-                                            label={{ value: 'Voertuigen', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 10, fill: DMI.darkGray } }}
-                                          />
-                                          <RechartsTooltip
-                                            formatter={(value) => [`${Number(value).toLocaleString('nl-NL')}`, 'Max voertuigen']}
-                                            labelFormatter={(label) => `SL: ${label}%`}
-                                          />
-                                          <Line
-                                            type="monotone"
-                                            dataKey="vehicles"
-                                            stroke={CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}
-                                            strokeWidth={2}
-                                            dot={{ r: 3, fill: CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue }}
-                                          />
-                                        </LineChart>
-                                      </ResponsiveContainer>
-                                    </div>
+                              {/* Service Level Curve */}
+                              {clusterServiceLevelCurves[cr.clusterId]?.length > 0 && (
+                                <div style={{ marginTop: '12px' }}>
+                                  <p style={{ ...labelMono, marginBottom: '6px' }}>Service Level Curve</p>
+                                  <div style={{ width: '100%', height: 160 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <LineChart data={clusterServiceLevelCurves[cr.clusterId]} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke={DMI.blueTint2} />
+                                        <XAxis
+                                          dataKey="serviceLevel"
+                                          tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                                          axisLine={{ stroke: DMI.blueTint2 }}
+                                          label={{ value: 'SL %', position: 'insideBottomRight', offset: -3, style: { fontSize: 10, fill: DMI.darkGray } }}
+                                        />
+                                        <YAxis
+                                          tick={{ fontSize: 10, fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray }}
+                                          axisLine={{ stroke: DMI.blueTint2 }}
+                                          label={{ value: 'Voertuigen', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 10, fill: DMI.darkGray } }}
+                                        />
+                                        <RechartsTooltip
+                                          formatter={(value) => [`${Number(value).toLocaleString('nl-NL')}`, 'Max voertuigen']}
+                                          labelFormatter={(label) => `SL: ${label}%`}
+                                        />
+                                        <Line
+                                          type="monotone"
+                                          dataKey="vehicles"
+                                          stroke={CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue}
+                                          strokeWidth={2}
+                                          dot={{ r: 3, fill: CLUSTER_COLORS[cr.clusterId] || DMI.mediumBlue }}
+                                        />
+                                      </LineChart>
+                                    </ResponsiveContainer>
                                   </div>
-                                )}
-                              </div>
-                            )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
