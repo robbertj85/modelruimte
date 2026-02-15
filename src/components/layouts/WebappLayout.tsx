@@ -5,13 +5,16 @@ import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
 import { VEHICLES, FUNCTIONS } from '@/lib/model-data';
 import { DMI, PERIOD_COLORS, FUNCTION_COLORS, CLUSTER_COLORS, CLUSTER_NAMES, SERVICE_LEVEL_OPTIONS, MAX_CLUSTERS, heading, bodyText, labelMono } from '@/lib/dmi-theme';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
-import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen } from 'lucide-react';
+import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen, MapPin, RotateCcw, Settings } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
-import { COVER, HANDLEIDING_SECTIONS, PARTNER_LOGOS } from '@/lib/content';
+import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT } from '@/lib/content';
+import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
+import { HandleidingTableRenderer } from '@/components/HandleidingTable';
+import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
 
-type WebappTab = 'info' | 'dashboard' | 'invoer' | 'clustering' | 'resultaten';
+type WebappTab = 'cover' | 'handleiding' | 'casus' | 'dashboard' | 'invoer' | 'parameters' | 'clustering' | 'resultaten';
 
 const TICK_STYLE = { fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray } as const;
 const TICK_SM = { ...TICK_STYLE, fontSize: 10 } as const;
@@ -83,6 +86,8 @@ export default function WebappLayout({
   onLayoutChange: (layout: LayoutType) => void;
 }) {
   const [activeTab, setActiveTab] = useState<WebappTab>('dashboard');
+  const [extendedSim, setExtendedSim] = useState(false);
+  const [paramView, setParamView] = useState<'algemeen' | string>('algemeen');
 
   const activeFunctionCount = useMemo(() => {
     return Object.entries(state.functionCounts).filter(([, count]) => count > 0).length;
@@ -133,9 +138,12 @@ export default function WebappLayout({
   }, [state.results]);
 
   const tabs: { id: WebappTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'info', label: 'Info', icon: <BookOpen size={18} /> },
+    { id: 'cover', label: 'Info', icon: <Info size={18} /> },
+    { id: 'handleiding', label: 'Handleiding', icon: <BookOpen size={18} /> },
+    { id: 'casus', label: 'Casus', icon: <MapPin size={18} /> },
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
     { id: 'invoer', label: 'Invoer', icon: <ClipboardList size={18} /> },
+    { id: 'parameters', label: 'Parameters', icon: <Settings size={18} /> },
     { id: 'clustering', label: 'Clustering', icon: <Network size={18} /> },
     { id: 'resultaten', label: 'Resultaten', icon: <BarChart3 size={18} /> },
   ];
@@ -164,7 +172,7 @@ export default function WebappLayout({
         >
           {/* Left: Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '160px' }}>
-            <Image src="/dmi-logo.png" alt="DMI" width={120} height={40} style={{ objectFit: 'contain' }} />
+            <Image src="/dmi-logo.png" alt="DMI" width={200} height={64} style={{ objectFit: 'contain' }} />
           </div>
 
           {/* Center: Tab buttons */}
@@ -235,11 +243,10 @@ export default function WebappLayout({
         <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 24px 64px' }}>
 
           {/* ---------------------------------------------------------- */}
-          {/*  INFO TAB (Cover + Handleiding)                             */}
+          {/*  COVER TAB                                                   */}
           {/* ---------------------------------------------------------- */}
-          {activeTab === 'info' && (
+          {activeTab === 'cover' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-              {/* Cover section */}
               <WCard>
                 <div style={{ textAlign: 'center', padding: '24px 0' }}>
                   <h1 style={{ ...heading, fontSize: '2rem', marginBottom: '12px' }}>
@@ -269,46 +276,46 @@ export default function WebappLayout({
                     {COVER.description}
                   </p>
 
-                  {/* Partner logos */}
+                  {/* Partner logos — grouped by role */}
                   <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '24px' }}>
-                    <p style={{ ...labelMono, marginBottom: '16px' }}>Partners</p>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        justifyContent: 'center',
-                        gap: '28px',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {PARTNER_LOGOS.map((logo) => (
-                        <div
-                          key={logo.src}
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '6px',
-                          }}
-                        >
-                          <Image
-                            src={logo.src}
-                            alt={logo.alt}
-                            width={90}
-                            height={45}
-                            style={{ objectFit: 'contain', maxHeight: '45px' }}
-                          />
-                          <span style={{ ...bodyText, fontSize: '0.6rem', color: DMI.darkGray }}>
-                            {logo.organization}
-                          </span>
+                    {PARTNER_SECTIONS.map((section) => (
+                      <div key={section.label} style={{ marginBottom: '20px' }}>
+                        <p style={{ ...bodyText, fontSize: '0.72rem', fontStyle: 'italic', color: DMI.darkGray, marginBottom: '10px' }}>
+                          {section.label}
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '28px', alignItems: 'center' }}>
+                          {section.logos.map((logo) => (
+                            <Image
+                              key={logo.src}
+                              src={logo.src}
+                              alt={logo.alt}
+                              width={100}
+                              height={45}
+                              style={{ objectFit: 'contain', maxHeight: '45px' }}
+                            />
+                          ))}
                         </div>
+                      </div>
+                    ))}
+                    <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '12px', marginTop: '8px' }}>
+                      <p style={{ ...labelMono, marginBottom: '4px' }}>{CONTACT.label}</p>
+                      {CONTACT.lines.map((line) => (
+                        <p key={line} style={{ ...bodyText, fontSize: '0.72rem', color: DMI.darkGray, margin: 0, lineHeight: 1.6 }}>
+                          {line}
+                        </p>
                       ))}
                     </div>
                   </div>
                 </div>
               </WCard>
+            </div>
+          )}
 
-              {/* Handleiding sections */}
+          {/* ---------------------------------------------------------- */}
+          {/*  HANDLEIDING TAB                                             */}
+          {/* ---------------------------------------------------------- */}
+          {activeTab === 'handleiding' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
               <div>
                 <h2 style={{ ...heading, fontSize: '1.4rem', marginBottom: '16px' }}>
                   Handleiding
@@ -329,10 +336,94 @@ export default function WebappLayout({
                           {p}
                         </p>
                       ))}
+                      {section.tables?.map((table, ti) => (
+                        <HandleidingTableRenderer key={ti} table={table} />
+                      ))}
+                      {section.diagrams?.map((key) => (
+                        <HandleidingDiagram key={key} diagramKey={key} />
+                      ))}
                     </WCard>
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ---------------------------------------------------------- */}
+          {/*  CASUS TAB                                                   */}
+          {/* ---------------------------------------------------------- */}
+          {activeTab === 'casus' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '900px' }}>
+              <div>
+                <h1 style={{ ...heading, fontSize: '1.8rem', marginBottom: '8px' }}>
+                  {CASUS_GERARD_DOUSTRAAT.title}
+                </h1>
+                <p style={{ ...bodyText, fontSize: '1rem', color: DMI.mediumBlue, marginBottom: '16px' }}>
+                  {CASUS_GERARD_DOUSTRAAT.subtitle}
+                </p>
+                <p style={{ ...bodyText, fontSize: '0.95rem', lineHeight: 1.7, color: DMI.darkGray }}>
+                  {CASUS_GERARD_DOUSTRAAT.intro}
+                </p>
+              </div>
+
+              {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
+                <WCard key={sIdx} title={section.title}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {section.paragraphs.map((p, pIdx) => (
+                      <p key={pIdx} style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, whiteSpace: 'pre-line', margin: 0 }}>
+                        {p}
+                      </p>
+                    ))}
+                    {section.images && section.images.map((img, iIdx) => (
+                      <figure key={iIdx} style={{ margin: '16px 0 0 0' }}>
+                        <img
+                          src={img.src}
+                          alt={img.alt}
+                          style={{ width: '100%', borderRadius: '8px', border: `1px solid ${DMI.blueTint2}` }}
+                        />
+                        {img.caption && (
+                          <figcaption style={{ ...bodyText, fontSize: '0.75rem', color: DMI.darkGray, marginTop: '8px', fontStyle: 'italic' }}>
+                            {img.caption}
+                          </figcaption>
+                        )}
+                      </figure>
+                    ))}
+                  </div>
+                </WCard>
+              ))}
+
+              <WCard title="Probeer het zelf">
+                <p style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '16px' }}>
+                  Laad de invoerwaarden van de Gerard Doustraat casus in het model om de resultaten zelf te verkennen, of begin met een leeg model.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => { state.resetToGerardDoustraat(); setActiveTab('invoer'); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '10px 20px', borderRadius: '8px', border: 'none',
+                      backgroundColor: DMI.darkBlue, color: DMI.white,
+                      fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                      fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                    }}
+                  >
+                    <MapPin size={16} /> Laad Casus Gerard Doustraat
+                  </button>
+                  <button
+                    onClick={() => { state.resetToBlank(); setActiveTab('invoer'); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '10px 20px', borderRadius: '8px',
+                      border: `2px solid ${DMI.darkBlue}`, backgroundColor: 'transparent',
+                      color: DMI.darkBlue,
+                      fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                      fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                    }}
+                  >
+                    <RotateCcw size={16} /> Begin met leeg model
+                  </button>
+                </div>
+              </WCard>
             </div>
           )}
 
@@ -371,6 +462,12 @@ export default function WebappLayout({
                   value={state.results ? `${Math.round(state.results.totalSpaceM2 * 10) / 10}` : '--'}
                   unit="meter"
                   accent={DMI.themeAreaDev}
+                />
+                <KpiCard
+                  label="Benodigde Oppervlakte"
+                  value={state.results ? `${Math.round(state.results.totalSpaceM2 * 3 * 10) / 10}` : '--'}
+                  unit="m²"
+                  accent={DMI.themeLogistics}
                 />
                 <KpiCard
                   label="Actieve Clusters"
@@ -511,14 +608,42 @@ export default function WebappLayout({
           {/* ---------------------------------------------------------- */}
           {activeTab === 'invoer' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-              <div>
-                <h1 style={{ ...heading, fontSize: '1.5rem', marginBottom: '8px' }}>
-                  Inventarisatie Functies
-                </h1>
-                <p style={{ ...bodyText, fontSize: '0.9rem', maxWidth: '640px', lineHeight: 1.6 }}>
-                  Geef het aantal eenheden per functie op voor het plangebied. Deze aantallen
-                  bepalen het verwachte verkeer en de bijbehorende ruimtebehoefte.
-                </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <h1 style={{ ...heading, fontSize: '1.5rem', marginBottom: '8px' }}>
+                    Inventarisatie Functies
+                  </h1>
+                  <p style={{ ...bodyText, fontSize: '0.9rem', maxWidth: '640px', lineHeight: 1.6 }}>
+                    Geef het aantal eenheden per functie op voor het plangebied. Deze aantallen
+                    bepalen het verwachte verkeer en de bijbehorende ruimtebehoefte.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                  <button
+                    onClick={state.resetToGerardDoustraat}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '8px 14px', borderRadius: '6px', border: `1px solid ${DMI.blueTint1}`,
+                      backgroundColor: DMI.blueTint3, color: DMI.darkBlue,
+                      fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                      fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
+                    }}
+                  >
+                    <MapPin size={14} /> Gerard Doustraat
+                  </button>
+                  <button
+                    onClick={state.resetToBlank}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '8px 14px', borderRadius: '6px', border: `1px solid ${DMI.blueTint1}`,
+                      backgroundColor: DMI.blueTint3, color: DMI.darkBlue,
+                      fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                      fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
+                    }}
+                  >
+                    <RotateCcw size={14} /> Leeg model
+                  </button>
+                </div>
               </div>
 
               {/* Function inputs grid */}
@@ -679,6 +804,59 @@ export default function WebappLayout({
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
+                </WCard>
+              )}
+            </div>
+          )}
+
+          {/* ---------------------------------------------------------- */}
+          {/*  PARAMETERS TAB                                             */}
+          {/* ---------------------------------------------------------- */}
+          {activeTab === 'parameters' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {paramView === 'algemeen' ? (
+                <>
+                  <WCard title="Algemene Parameters">
+                    <AlgemeenEditor state={state} theme="webapp" />
+                  </WCard>
+                  <WCard title="Beleveringsprofielen">
+                    <p style={{ ...bodyText, fontSize: '0.85rem', marginBottom: '16px', color: DMI.darkGray }}>
+                      Selecteer een functie om het beleveringsprofiel te bewerken.
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {state.allFunctions.map((func) => (
+                        <button
+                          key={func.id}
+                          onClick={() => setParamView(func.id)}
+                          style={{
+                            padding: '6px 14px',
+                            backgroundColor: DMI.blueTint3,
+                            color: DMI.darkBlue,
+                            border: `1px solid ${DMI.blueTint2}`,
+                            borderRadius: '6px',
+                            fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint2; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint3; }}
+                        >
+                          {func.name}
+                        </button>
+                      ))}
+                    </div>
+                  </WCard>
+                </>
+              ) : (
+                <WCard>
+                  <DeliveryProfileEditor
+                    state={state}
+                    theme="webapp"
+                    functionId={paramView}
+                    onBack={() => setParamView('algemeen')}
+                  />
                 </WCard>
               )}
             </div>
@@ -902,7 +1080,7 @@ export default function WebappLayout({
               <WCard title="Simulatie Instellingen">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: '300px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <span style={{ ...labelMono }}>Aantal Simulaties</span>
                       <span
                         style={{
@@ -912,20 +1090,40 @@ export default function WebappLayout({
                           fontSize: '0.9rem',
                         }}
                       >
-                        {state.numSimulations}
+                        {state.numSimulations.toLocaleString('nl-NL')}
                       </span>
                     </div>
                     <Slider
                       min={100}
-                      max={5000}
-                      step={100}
+                      max={extendedSim ? 50000 : 5000}
+                      step={extendedSim ? 500 : 100}
                       value={[state.numSimulations]}
                       onValueChange={([val]) => state.setNumSimulations(val)}
                       style={{ width: '100%' }}
                     />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                       <span style={{ ...bodyText, fontSize: '0.7rem', color: DMI.darkGray }}>100</span>
-                      <span style={{ ...bodyText, fontSize: '0.7rem', color: DMI.darkGray }}>5000</span>
+                      <label
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none' }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={extendedSim}
+                          onChange={(e) => {
+                            setExtendedSim(e.target.checked);
+                            if (!e.target.checked && state.numSimulations > 5000) {
+                              state.setNumSimulations(5000);
+                            }
+                          }}
+                          style={{ accentColor: DMI.darkBlue }}
+                        />
+                        <span style={{ ...bodyText, fontSize: '0.7rem', color: DMI.darkGray }}>
+                          Uitgebreid (max 50.000)
+                        </span>
+                      </label>
+                      <span style={{ ...bodyText, fontSize: '0.7rem', color: DMI.darkGray }}>
+                        {extendedSim ? '50.000' : '5.000'}
+                      </span>
                     </div>
                   </div>
 
@@ -974,7 +1172,8 @@ export default function WebappLayout({
                     <span style={{ fontSize: '1.2rem' }}>&#10003;</span>
                     <span style={{ ...bodyText, fontSize: '0.9rem', color: DMI.darkBlue }}>
                       Simulatie voltooid. Totale benodigde ruimte:{' '}
-                      <strong>{Math.round(state.results.totalSpaceM2 * 10) / 10} meter</strong>
+                      <strong>{Math.round(state.results.totalSpaceM2 * 10) / 10} meter</strong>{' '}
+                      ({Math.round(state.results.totalSpaceM2 * 3 * 10) / 10} m²)
                     </span>
                     <button
                       onClick={() => setActiveTab('resultaten')}
@@ -1049,10 +1248,16 @@ export default function WebappLayout({
                   {/* KPI summary row */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
                     <KpiCard
-                      label="Totale Ruimte"
+                      label="Totale Lengte"
                       value={Math.round(state.results.totalSpaceM2 * 10) / 10}
                       unit="meter"
                       accent={DMI.darkBlue}
+                    />
+                    <KpiCard
+                      label="Totale Oppervlakte"
+                      value={Math.round(state.results.totalSpaceM2 * 3 * 10) / 10}
+                      unit="m²"
+                      accent={DMI.themeLogistics}
                     />
                     <KpiCard
                       label="Voertuigen per Dag"
@@ -1592,34 +1797,66 @@ export default function WebappLayout({
                           Som van alle clusters op hun respectievelijke service levels
                         </p>
                       </div>
-                      <div
-                        style={{
-                          padding: '16px 32px',
-                          borderRadius: '10px',
-                          backgroundColor: DMI.darkBlue,
-                          color: DMI.white,
-                          textAlign: 'center',
-                        }}
-                      >
+                      <div style={{ display: 'flex', gap: '16px' }}>
                         <div
                           style={{
-                            fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                            fontWeight: 700,
-                            fontSize: '2rem',
-                            lineHeight: 1,
+                            padding: '16px 32px',
+                            borderRadius: '10px',
+                            backgroundColor: DMI.darkBlue,
+                            color: DMI.white,
+                            textAlign: 'center',
                           }}
                         >
-                          {Math.round(state.results.totalSpaceM2 * 10) / 10}
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                              fontWeight: 700,
+                              fontSize: '2rem',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {Math.round(state.results.totalSpaceM2 * 10) / 10}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                              fontSize: '0.8rem',
+                              marginTop: '4px',
+                              opacity: 0.8,
+                            }}
+                          >
+                            meter
+                          </div>
                         </div>
                         <div
                           style={{
-                            fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-                            fontSize: '0.8rem',
-                            marginTop: '4px',
-                            opacity: 0.8,
+                            padding: '16px 32px',
+                            borderRadius: '10px',
+                            backgroundColor: DMI.themeLogistics,
+                            color: DMI.darkBlue,
+                            textAlign: 'center',
                           }}
                         >
-                          meter
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                              fontWeight: 700,
+                              fontSize: '2rem',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {Math.round(state.results.totalSpaceM2 * 3 * 10) / 10}
+                          </div>
+                          <div
+                            style={{
+                              fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                              fontSize: '0.8rem',
+                              marginTop: '4px',
+                              opacity: 0.8,
+                            }}
+                          >
+                            m²
+                          </div>
                         </div>
                       </div>
                     </div>

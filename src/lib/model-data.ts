@@ -464,6 +464,80 @@ export const DELIVERY_PROFILES: Record<string, DeliveryProfile> = {
   },
 };
 
+// Capacity limits (matching Excel)
+export const MAX_FUNCTIONS = 15;
+export const MAX_VEHICLES = 7;
+export const MAX_DISTRIBUTIONS = 18;
+
+// Default-value getters for reset capability
+export function getDefaultVehicleLengths(): Record<string, number> {
+  const lengths: Record<string, number> = {};
+  for (const v of VEHICLES) lengths[v.id] = v.length;
+  return lengths;
+}
+
+export function getDefaultDeliveryDays(): Record<string, number> {
+  const days: Record<string, number> = {};
+  for (const d of DISTRIBUTIONS) days[d.id] = d.deliveryDays;
+  return days;
+}
+
+export function getDefaultDeliveryProfiles(): Record<string, DeliveryProfile> {
+  const result: Record<string, DeliveryProfile> = {};
+  for (const [key, profile] of Object.entries(DELIVERY_PROFILES)) {
+    result[key] = {
+      stopsPerWeekPerUnit: [...profile.stopsPerWeekPerUnit],
+      duration: [...profile.duration],
+      periodDistribution: profile.periodDistribution.map((pd) => [...pd]),
+    };
+  }
+  return result;
+}
+
+// Profile metadata: description and remarks per F×D profile (extracted from xlsm BP sheets)
+export const PROFILE_METADATA: Record<string, { description: string; remarks: string }> = {
+  'F1_D7': { description: 'Pakketleveringen aan woningen', remarks: 'Eén bestelwagen per afleveradres.' },
+  'F1_D10': { description: 'Service & onderhoud aan woningen', remarks: 'Loodgieter, elektricien, etc.' },
+  'F1_D13': { description: 'Thuisbezorging boodschappen', remarks: 'Online supermarkt bestellingen.' },
+  'F1_D14': { description: 'Tweemans thuisbelevering', remarks: 'Grote items (meubels, witgoed).' },
+  'F2_D10': { description: 'Service & onderhoud supermarkt', remarks: '' },
+  'F2_D12': { description: 'Supermarktleveringen', remarks: 'Reguliere bevoorrading.' },
+  'F3_D10': { description: 'Service & onderhoud retail food', remarks: '' },
+  'F3_D11': { description: 'Specialisten retail food', remarks: 'Versproducten, bakkerij, etc.' },
+  'F4_D8': { description: 'Retail keten bevoorrading', remarks: '' },
+  'F4_D10': { description: 'Service & onderhoud retail keten', remarks: '' },
+  'F5_D7': { description: 'Pakketleveringen retail onafh.', remarks: 'Profiel zonder actieve voertuigen.' },
+  'F5_D9': { description: 'Retail onafhankelijk bevoorrading', remarks: '' },
+  'F5_D10': { description: 'Service & onderhoud retail onafh.', remarks: '' },
+  'F6_D6': { description: 'Horeca/groothandel restaurant high-end', remarks: '' },
+  'F6_D10': { description: 'Service & onderhoud restaurant high-end', remarks: '' },
+  'F6_D11': { description: 'Specialisten restaurant high-end', remarks: '' },
+  'F7_D6': { description: 'Horeca/groothandel restaurant basis', remarks: '' },
+  'F7_D10': { description: 'Service & onderhoud restaurant basis', remarks: '' },
+  'F7_D11': { description: 'Specialisten restaurant basis', remarks: '' },
+  'F8_D6': { description: 'Horeca/groothandel café', remarks: '' },
+  'F8_D10': { description: 'Service & onderhoud café', remarks: '' },
+  'F8_D11': { description: 'Specialisten café', remarks: 'Profiel zonder actieve voertuigen.' },
+  'F9_D6': { description: 'Horeca/groothandel hotel', remarks: '' },
+  'F9_D7': { description: 'Pakketleveringen hotel', remarks: '' },
+  'F9_D10': { description: 'Service & onderhoud hotel', remarks: '' },
+  'F9_D11': { description: 'Specialisten hotel', remarks: '' },
+  'F10_D5': { description: 'Facilitair kantoor klein', remarks: '' },
+  'F10_D7': { description: 'Pakketleveringen kantoor klein', remarks: '' },
+  'F10_D10': { description: 'Service & onderhoud kantoor klein', remarks: '' },
+  'F10_D11': { description: 'Specialisten kantoor klein', remarks: '' },
+  'F11_D5': { description: 'Facilitair kantoor middel', remarks: '' },
+  'F11_D6': { description: 'Horeca/groothandel kantoor middel', remarks: '' },
+  'F11_D7': { description: 'Pakketleveringen kantoor middel', remarks: '' },
+  'F11_D10': { description: 'Service & onderhoud kantoor middel', remarks: '' },
+  'F11_D11': { description: 'Specialisten kantoor middel', remarks: '' },
+  'F12_D5': { description: 'Facilitair kantoor groot', remarks: '' },
+  'F12_D6': { description: 'Horeca/groothandel kantoor groot', remarks: '' },
+  'F12_D7': { description: 'Pakketleveringen kantoor groot', remarks: '' },
+  'F12_D10': { description: 'Service & onderhoud kantoor groot', remarks: '' },
+  'F12_D11': { description: 'Specialisten kantoor groot', remarks: '' },
+};
+
 // Default function counts (from the example scenario in the Excel)
 export const DEFAULT_FUNCTION_COUNTS: Record<string, number> = {
   F1: 362,  // Woningen

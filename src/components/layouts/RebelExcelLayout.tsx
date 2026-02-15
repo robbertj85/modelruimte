@@ -8,7 +8,10 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Loader2, Play } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
-import { COVER, HANDLEIDING_SECTIONS, PARTNER_LOGOS } from '@/lib/content';
+import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT } from '@/lib/content';
+import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
+import { HandleidingTableRenderer } from '@/components/HandleidingTable';
+import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
 
 // ---------------------------------------------------------------------------
 // Rebel Color Scheme
@@ -59,6 +62,7 @@ const CLUSTER_COLORS: Record<number, string> = {
 const TABS = [
   { id: 'cover', label: 'Cover' },
   { id: 'handleiding', label: 'Handleiding' },
+  { id: 'casus', label: 'Casus' },
   { id: 'cockpit', label: 'Cockpit' },
   { id: 'inputs', label: 'Inputs' },
   { id: 'algemeen', label: 'Algemeen' },
@@ -72,7 +76,7 @@ type TabId = (typeof TABS)[number]['id'];
 function RebelLogo() {
   return (
     <Image
-      src="/rebel-logo.png"
+      src="/logos/rebel-badge.png"
       alt="Rebel"
       width={44}
       height={44}
@@ -234,6 +238,7 @@ export default function RebelExcelLayout({
 
   const [activeTab, setActiveTab] = useState<TabId>('cockpit');
   const [selectedFunction, setSelectedFunction] = useState<string | null>('algemeen');
+  const [extendedSim, setExtendedSim] = useState(false);
 
   // --- Derived data for charts ---
 
@@ -393,37 +398,49 @@ export default function RebelExcelLayout({
             {COVER.description}
           </p>
           <div style={{ borderTop: `2px solid ${REBEL.coral}`, paddingTop: '24px' }}>
-            <p
-              style={{
-                fontFamily: 'Calibri, Arial, sans-serif',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                color: REBEL.coral,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '16px',
-              }}
-            >
-              Partners
-            </p>
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                gap: '24px',
-                alignItems: 'center',
-              }}
-            >
-              {PARTNER_LOGOS.map((logo) => (
-                <Image
-                  key={logo.src}
-                  src={logo.src}
-                  alt={logo.alt}
-                  width={80}
-                  height={40}
-                  style={{ objectFit: 'contain', maxHeight: '40px' }}
-                />
+            {PARTNER_SECTIONS.map((section) => (
+              <div key={section.label} style={{ marginBottom: '20px' }}>
+                <p
+                  style={{
+                    fontFamily: 'Calibri, Arial, sans-serif',
+                    fontSize: '0.7rem',
+                    fontStyle: 'italic',
+                    color: REBEL.tabInactive,
+                    marginBottom: '10px',
+                  }}
+                >
+                  {section.label}
+                </p>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    gap: '24px',
+                    alignItems: 'center',
+                  }}
+                >
+                  {section.logos.map((logo) => (
+                    <Image
+                      key={logo.src}
+                      src={logo.src}
+                      alt={logo.alt}
+                      width={100}
+                      height={44}
+                      style={{ objectFit: 'contain', maxHeight: '44px' }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div style={{ marginTop: '16px', borderTop: `1px solid ${REBEL.border}`, paddingTop: '12px' }}>
+              <p style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.7rem', fontWeight: 700, color: REBEL.textDark, marginBottom: '4px' }}>
+                {CONTACT.label}
+              </p>
+              {CONTACT.lines.map((line) => (
+                <p key={line} style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.7rem', color: REBEL.tabInactive, margin: 0, lineHeight: 1.6 }}>
+                  {line}
+                </p>
               ))}
             </div>
           </div>
@@ -460,6 +477,12 @@ export default function RebelExcelLayout({
                   <p key={pIdx} style={{ marginBottom: '10px' }}>
                     {p}
                   </p>
+                ))}
+                {section.tables?.map((table, ti) => (
+                  <HandleidingTableRenderer key={ti} table={table} theme="rebel" />
+                ))}
+                {section.diagrams?.map((key) => (
+                  <HandleidingDiagram key={key} diagramKey={key} theme="rebel" />
                 ))}
               </div>
             ))}
@@ -510,6 +533,98 @@ export default function RebelExcelLayout({
             </p>
           </div>
         </ExcelPanel>
+      </div>
+    );
+  }
+
+  function renderCasusTab() {
+    return (
+      <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
+        <h2 style={{ fontFamily: 'Calibri, sans-serif', fontSize: '1.5rem', fontWeight: 700, color: REBEL.coral, marginBottom: '6px' }}>
+          {CASUS_GERARD_DOUSTRAAT.title}
+        </h2>
+        <p style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.95rem', color: REBEL.textDark, marginBottom: '16px' }}>
+          {CASUS_GERARD_DOUSTRAAT.subtitle}
+        </p>
+        <p style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.9rem', color: REBEL.textDark, lineHeight: 1.7, marginBottom: '24px' }}>
+          {CASUS_GERARD_DOUSTRAAT.intro}
+        </p>
+
+        {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
+          <div
+            key={sIdx}
+            style={{
+              backgroundColor: REBEL.white,
+              border: `1px solid ${REBEL.border}`,
+              borderRadius: '4px',
+              padding: '16px 20px',
+              marginBottom: '12px',
+            }}
+          >
+            <h3 style={{ fontFamily: 'Calibri, sans-serif', fontSize: '1.1rem', fontWeight: 700, color: REBEL.coral, marginBottom: '10px' }}>
+              {section.title}
+            </h3>
+            {section.paragraphs.map((p, pIdx) => (
+              <p key={pIdx} style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.85rem', color: REBEL.textDark, lineHeight: 1.7, whiteSpace: 'pre-line', marginBottom: '8px' }}>
+                {p}
+              </p>
+            ))}
+            {section.images && section.images.map((img, iIdx) => (
+              <figure key={iIdx} style={{ margin: '12px 0 0 0' }}>
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  style={{ width: '100%', borderRadius: '4px', border: `1px solid ${REBEL.border}` }}
+                />
+                {img.caption && (
+                  <figcaption style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.75rem', color: REBEL.tabInactive, marginTop: '6px', fontStyle: 'italic' }}>
+                    {img.caption}
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
+        ))}
+
+        <div
+          style={{
+            backgroundColor: REBEL.white,
+            border: `1px solid ${REBEL.border}`,
+            borderRadius: '4px',
+            padding: '16px 20px',
+            marginBottom: '12px',
+          }}
+        >
+          <h3 style={{ fontFamily: 'Calibri, sans-serif', fontSize: '1.1rem', fontWeight: 700, color: REBEL.coral, marginBottom: '10px' }}>
+            Probeer het zelf
+          </h3>
+          <p style={{ fontFamily: 'Calibri, sans-serif', fontSize: '0.85rem', color: REBEL.textDark, lineHeight: 1.7, marginBottom: '14px' }}>
+            Laad de invoerwaarden van de Gerard Doustraat casus in het model, of begin met een leeg model.
+          </p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => { state.resetToGerardDoustraat(); setActiveTab('cockpit' as TabId); }}
+              style={{
+                padding: '8px 16px', borderRadius: '4px', border: 'none',
+                backgroundColor: REBEL.coral, color: REBEL.white,
+                fontFamily: 'Calibri, sans-serif', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+              }}
+            >
+              Laad Casus Gerard Doustraat
+            </button>
+            <button
+              onClick={() => { state.resetToBlank(); setActiveTab('cockpit' as TabId); }}
+              style={{
+                padding: '8px 16px', borderRadius: '4px',
+                border: `2px solid ${REBEL.coral}`, backgroundColor: 'transparent',
+                color: REBEL.coral,
+                fontFamily: 'Calibri, sans-serif', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+              }}
+            >
+              Begin met leeg model
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1119,11 +1234,29 @@ export default function RebelExcelLayout({
                 </p>
                 <Slider
                   min={100}
-                  max={5000}
-                  step={100}
+                  max={extendedSim ? 50000 : 5000}
+                  step={extendedSim ? 500 : 100}
                   value={[numSimulations]}
                   onValueChange={(vals) => setNumSimulations(vals[0])}
                 />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '3px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', userSelect: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={extendedSim}
+                      onChange={(e) => {
+                        setExtendedSim(e.target.checked);
+                        if (!e.target.checked && numSimulations > 5000) {
+                          setNumSimulations(5000);
+                        }
+                      }}
+                      style={{ accentColor: REBEL.coral }}
+                    />
+                    <span style={{ fontFamily: 'Calibri, Arial, sans-serif', fontSize: '0.55rem', color: REBEL.textDark }}>
+                      Uitgebreid (max 50.000)
+                    </span>
+                  </label>
+                </div>
               </div>
               <button
                 onClick={handleRun}
@@ -1631,6 +1764,32 @@ export default function RebelExcelLayout({
           </h2>
         </div>
 
+        {/* Reset buttons */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <button
+            onClick={state.resetToGerardDoustraat}
+            style={{
+              padding: '6px 14px', border: `1px solid ${REBEL.border}`,
+              backgroundColor: REBEL.offWhite, color: REBEL.textDark,
+              fontFamily: 'Calibri, Arial, sans-serif', fontWeight: 600, fontSize: '0.75rem',
+              cursor: 'pointer', borderRadius: '2px',
+            }}
+          >
+            Gerard Doustraat
+          </button>
+          <button
+            onClick={state.resetToBlank}
+            style={{
+              padding: '6px 14px', border: `1px solid ${REBEL.border}`,
+              backgroundColor: REBEL.offWhite, color: REBEL.textDark,
+              fontFamily: 'Calibri, Arial, sans-serif', fontWeight: 600, fontSize: '0.75rem',
+              cursor: 'pointer', borderRadius: '2px',
+            }}
+          >
+            Leeg model
+          </button>
+        </div>
+
         {/* Buttons row */}
         <div style={{ marginBottom: '12px' }}>
           <p
@@ -1644,22 +1803,38 @@ export default function RebelExcelLayout({
           >
             Algemene Inputs
           </p>
-          <button
-            onClick={() => setSelectedFunction('algemeen')}
-            style={{
-              padding: '8px 20px',
-              backgroundColor: selectedFunction === 'algemeen' ? REBEL.coral : REBEL.darkBg2,
-              color: REBEL.white,
-              border: 'none',
-              fontSize: '0.8rem',
-              fontFamily: 'Calibri, Arial, sans-serif',
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: '16px',
-            }}
-          >
-            Algemene Inputs
-          </button>
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
+            <button
+              onClick={() => setSelectedFunction('algemeen')}
+              style={{
+                padding: '8px 20px',
+                backgroundColor: selectedFunction === 'algemeen' ? REBEL.coral : REBEL.darkBg2,
+                color: REBEL.white,
+                border: 'none',
+                fontSize: '0.8rem',
+                fontFamily: 'Calibri, Arial, sans-serif',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Aantal per Functie
+            </button>
+            <button
+              onClick={() => setSelectedFunction('parameters')}
+              style={{
+                padding: '8px 20px',
+                backgroundColor: selectedFunction === 'parameters' ? REBEL.coral : REBEL.darkBg2,
+                color: REBEL.white,
+                border: 'none',
+                fontSize: '0.8rem',
+                fontFamily: 'Calibri, Arial, sans-serif',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Parameters
+            </button>
+          </div>
 
           <p
             style={{
@@ -1673,7 +1848,7 @@ export default function RebelExcelLayout({
             Beleveringsprofielen
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {FUNCTIONS.map((func) => (
+            {state.allFunctions.map((func) => (
               <button
                 key={func.id}
                 onClick={() => setSelectedFunction(func.id)}
@@ -1716,125 +1891,24 @@ export default function RebelExcelLayout({
             >
               <thead>
                 <tr>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '8px 10px',
-                      borderBottom: `2px solid ${REBEL.coral}`,
-                      fontWeight: 700,
-                      color: REBEL.textDark,
-                      fontSize: '0.7rem',
-                      textTransform: 'uppercase',
-                      backgroundColor: REBEL.offWhite,
-                    }}
-                  >
-                    Functie
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '8px 10px',
-                      borderBottom: `2px solid ${REBEL.coral}`,
-                      fontWeight: 700,
-                      color: REBEL.textDark,
-                      fontSize: '0.7rem',
-                      textTransform: 'uppercase',
-                      backgroundColor: REBEL.offWhite,
-                    }}
-                  >
-                    Omschrijving
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'left',
-                      padding: '8px 10px',
-                      borderBottom: `2px solid ${REBEL.coral}`,
-                      fontWeight: 700,
-                      color: REBEL.textDark,
-                      fontSize: '0.7rem',
-                      textTransform: 'uppercase',
-                      backgroundColor: REBEL.offWhite,
-                    }}
-                  >
-                    Eenheid
-                  </th>
-                  <th
-                    style={{
-                      textAlign: 'center',
-                      padding: '8px 10px',
-                      borderBottom: `2px solid ${REBEL.coral}`,
-                      fontWeight: 700,
-                      color: REBEL.textDark,
-                      fontSize: '0.7rem',
-                      textTransform: 'uppercase',
-                      backgroundColor: REBEL.offWhite,
-                    }}
-                  >
-                    Aantal
-                  </th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: `2px solid ${REBEL.coral}`, fontWeight: 700, color: REBEL.textDark, fontSize: '0.7rem', textTransform: 'uppercase', backgroundColor: REBEL.offWhite }}>Functie</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: `2px solid ${REBEL.coral}`, fontWeight: 700, color: REBEL.textDark, fontSize: '0.7rem', textTransform: 'uppercase', backgroundColor: REBEL.offWhite }}>Omschrijving</th>
+                  <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: `2px solid ${REBEL.coral}`, fontWeight: 700, color: REBEL.textDark, fontSize: '0.7rem', textTransform: 'uppercase', backgroundColor: REBEL.offWhite }}>Eenheid</th>
+                  <th style={{ textAlign: 'center', padding: '8px 10px', borderBottom: `2px solid ${REBEL.coral}`, fontWeight: 700, color: REBEL.textDark, fontSize: '0.7rem', textTransform: 'uppercase', backgroundColor: REBEL.offWhite }}>Aantal</th>
                 </tr>
               </thead>
               <tbody>
-                {FUNCTIONS.map((func, idx) => (
-                  <tr
-                    key={func.id}
-                    style={{
-                      backgroundColor: idx % 2 === 0 ? REBEL.white : REBEL.offWhite,
-                    }}
-                  >
-                    <td
-                      style={{
-                        padding: '6px 10px',
-                        borderBottom: `1px solid ${REBEL.gridLine}`,
-                        fontWeight: 600,
-                        color: REBEL.textDark,
-                      }}
-                    >
-                      {func.name}
-                    </td>
-                    <td
-                      style={{
-                        padding: '6px 10px',
-                        borderBottom: `1px solid ${REBEL.gridLine}`,
-                        color: REBEL.tabInactive,
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      {func.description}
-                    </td>
-                    <td
-                      style={{
-                        padding: '6px 10px',
-                        borderBottom: `1px solid ${REBEL.gridLine}`,
-                        color: REBEL.textDark,
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      {func.unit}
-                    </td>
-                    <td
-                      style={{
-                        textAlign: 'center',
-                        padding: '6px 10px',
-                        borderBottom: `1px solid ${REBEL.gridLine}`,
-                      }}
-                    >
+                {state.allFunctions.map((func, idx) => (
+                  <tr key={func.id} style={{ backgroundColor: idx % 2 === 0 ? REBEL.white : REBEL.offWhite }}>
+                    <td style={{ padding: '6px 10px', borderBottom: `1px solid ${REBEL.gridLine}`, fontWeight: 600, color: REBEL.textDark }}>{func.name}</td>
+                    <td style={{ padding: '6px 10px', borderBottom: `1px solid ${REBEL.gridLine}`, color: REBEL.tabInactive, fontSize: '0.75rem' }}>{func.description}</td>
+                    <td style={{ padding: '6px 10px', borderBottom: `1px solid ${REBEL.gridLine}`, color: REBEL.textDark, fontSize: '0.75rem' }}>{func.unit}</td>
+                    <td style={{ textAlign: 'center', padding: '6px 10px', borderBottom: `1px solid ${REBEL.gridLine}` }}>
                       <input
-                        type="number"
-                        min={0}
+                        type="number" min={0}
                         value={functionCounts[func.id] ?? 0}
                         onChange={(e) => handleFunctionCountChange(func.id, e.target.value)}
-                        style={{
-                          width: '80px',
-                          padding: '4px 8px',
-                          border: `1px solid ${REBEL.border}`,
-                          fontSize: '0.8rem',
-                          fontFamily: 'Calibri, Arial, sans-serif',
-                          color: REBEL.greenDark,
-                          fontWeight: 700,
-                          textAlign: 'center',
-                          outline: 'none',
-                        }}
+                        style={{ width: '80px', padding: '4px 8px', border: `1px solid ${REBEL.border}`, fontSize: '0.8rem', fontFamily: 'Calibri, Arial, sans-serif', color: REBEL.greenDark, fontWeight: 700, textAlign: 'center', outline: 'none' }}
                       />
                     </td>
                   </tr>
@@ -1842,349 +1916,28 @@ export default function RebelExcelLayout({
               </tbody>
               <tfoot>
                 <tr>
-                  <td
-                    colSpan={3}
-                    style={{
-                      padding: '8px 10px',
-                      borderTop: `2px solid ${REBEL.coral}`,
-                      fontWeight: 700,
-                      color: REBEL.textDark,
-                    }}
-                  >
-                    Totaal Functies
-                  </td>
-                  <td
-                    style={{
-                      textAlign: 'center',
-                      padding: '8px 10px',
-                      borderTop: `2px solid ${REBEL.coral}`,
-                      fontWeight: 700,
-                      color: REBEL.greenDark,
-                      fontSize: '1rem',
-                    }}
-                  >
-                    {totalFunctions.toLocaleString('nl-NL')}
-                  </td>
+                  <td colSpan={3} style={{ padding: '8px 10px', borderTop: `2px solid ${REBEL.coral}`, fontWeight: 700, color: REBEL.textDark }}>Totaal Functies</td>
+                  <td style={{ textAlign: 'center', padding: '8px 10px', borderTop: `2px solid ${REBEL.coral}`, fontWeight: 700, color: REBEL.greenDark, fontSize: '1rem' }}>{totalFunctions.toLocaleString('nl-NL')}</td>
                 </tr>
               </tfoot>
             </table>
           </ExcelPanel>
         )}
 
-        {selectedFunction && selectedFunction !== 'algemeen' && (
-          <ExcelPanel title={`Beleveringsprofiel: ${FUNCTIONS.find((f) => f.id === selectedFunction)?.name ?? selectedFunction}`}>
-            {(() => {
-              const func = FUNCTIONS.find((f) => f.id === selectedFunction);
-              if (!func) return <p>Functie niet gevonden</p>;
+        {selectedFunction === 'parameters' && (
+          <ExcelPanel title="Parameters">
+            <AlgemeenEditor state={state} theme="rebel" />
+          </ExcelPanel>
+        )}
 
-              const count = functionCounts[func.id] ?? 0;
-
-              return (
-                <div>
-                  {/* Function count input */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '16px',
-                      padding: '10px 14px',
-                      backgroundColor: REBEL.offWhite,
-                      border: `1px solid ${REBEL.border}`,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: 'Calibri, Arial, sans-serif',
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: REBEL.textDark,
-                      }}
-                    >
-                      Aantal {func.unit}:
-                    </span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={count}
-                      onChange={(e) => handleFunctionCountChange(func.id, e.target.value)}
-                      style={{
-                        width: '100px',
-                        padding: '6px 10px',
-                        border: `1px solid ${REBEL.border}`,
-                        fontSize: '0.9rem',
-                        fontFamily: 'Calibri, Arial, sans-serif',
-                        color: REBEL.greenDark,
-                        fontWeight: 700,
-                        textAlign: 'center',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  {/* Description */}
-                  <div
-                    style={{
-                      marginBottom: '16px',
-                      padding: '10px 14px',
-                      backgroundColor: '#f0f8ff',
-                      border: `1px solid #4bacc6`,
-                      borderLeft: `4px solid #4bacc6`,
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontFamily: 'Calibri, Arial, sans-serif',
-                        fontSize: '0.8rem',
-                        color: REBEL.textDark,
-                        margin: 0,
-                      }}
-                    >
-                      {func.description}
-                    </p>
-                  </div>
-
-                  {/* Vehicle arrivals summary for this function */}
-                  <p
-                    style={{
-                      fontFamily: 'Calibri, Arial, sans-serif',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: REBEL.textDark,
-                      marginBottom: '8px',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Voertuigbewegingen per Week per Eenheid
-                  </p>
-                  <table
-                    style={{
-                      width: '100%',
-                      borderCollapse: 'collapse',
-                      fontFamily: 'Calibri, Arial, sans-serif',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    <thead>
-                      <tr>
-                        <th
-                          style={{
-                            textAlign: 'left',
-                            padding: '6px 8px',
-                            borderBottom: `2px solid ${REBEL.coral}`,
-                            fontWeight: 700,
-                            fontSize: '0.65rem',
-                            textTransform: 'uppercase',
-                            color: REBEL.textDark,
-                            backgroundColor: REBEL.offWhite,
-                          }}
-                        >
-                          Voertuigtype
-                        </th>
-                        {VEHICLES.map((v) => (
-                          <th
-                            key={v.id}
-                            style={{
-                              textAlign: 'center',
-                              padding: '6px 6px',
-                              borderBottom: `2px solid ${REBEL.coral}`,
-                              fontWeight: 700,
-                              fontSize: '0.6rem',
-                              textTransform: 'uppercase',
-                              color: REBEL.textDark,
-                              backgroundColor: REBEL.offWhite,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {v.name.length > 15 ? v.name.substring(0, 12) + '...' : v.name}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        // Find all delivery profiles for this function
-                        const profileKeys = Object.keys(
-                          (() => {
-                            const profiles: Record<string, typeof import('@/lib/model-data').DELIVERY_PROFILES[string]> = {};
-                            const { DELIVERY_PROFILES } = require('@/lib/model-data');
-                            for (const key of Object.keys(DELIVERY_PROFILES)) {
-                              if (key.startsWith(`${func.id}_`)) {
-                                profiles[key] = DELIVERY_PROFILES[key];
-                              }
-                            }
-                            return profiles;
-                          })()
-                        );
-
-                        if (profileKeys.length === 0) {
-                          return (
-                            <tr>
-                              <td
-                                colSpan={VEHICLES.length + 1}
-                                style={{
-                                  padding: '12px 8px',
-                                  textAlign: 'center',
-                                  color: REBEL.tabInactive,
-                                }}
-                              >
-                                Geen beleveringsprofielen beschikbaar
-                              </td>
-                            </tr>
-                          );
-                        }
-
-                        // We need the import at the module level, using dynamic import instead
-                        const { DELIVERY_PROFILES, DISTRIBUTIONS } = require('@/lib/model-data');
-
-                        return profileKeys.map((profileKey) => {
-                          const profile = DELIVERY_PROFILES[profileKey];
-                          const distId = profileKey.split('_')[1];
-                          const dist = DISTRIBUTIONS.find((d: { id: string }) => d.id === distId);
-                          const distName = dist ? dist.name : distId;
-
-                          return (
-                            <tr key={profileKey}>
-                              <td
-                                style={{
-                                  padding: '5px 8px',
-                                  borderBottom: `1px solid ${REBEL.gridLine}`,
-                                  fontWeight: 600,
-                                  color: REBEL.textDark,
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {distName}
-                              </td>
-                              {VEHICLES.map((v, vi) => (
-                                <td
-                                  key={v.id}
-                                  style={{
-                                    textAlign: 'center',
-                                    padding: '5px 6px',
-                                    borderBottom: `1px solid ${REBEL.gridLine}`,
-                                    color: profile.stopsPerWeekPerUnit[vi] > 0 ? REBEL.greenDark : REBEL.tabInactive,
-                                    fontWeight: profile.stopsPerWeekPerUnit[vi] > 0 ? 600 : 400,
-                                  }}
-                                >
-                                  {profile.stopsPerWeekPerUnit[vi] > 0
-                                    ? profile.stopsPerWeekPerUnit[vi].toLocaleString('nl-NL', { maximumFractionDigits: 3 })
-                                    : '-'}
-                                </td>
-                              ))}
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-
-                  {/* Stop durations */}
-                  <p
-                    style={{
-                      fontFamily: 'Calibri, Arial, sans-serif',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: REBEL.textDark,
-                      marginTop: '16px',
-                      marginBottom: '8px',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Stopduur (minuten) per Voertuig
-                  </p>
-                  <table
-                    style={{
-                      width: '100%',
-                      borderCollapse: 'collapse',
-                      fontFamily: 'Calibri, Arial, sans-serif',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    <thead>
-                      <tr>
-                        <th
-                          style={{
-                            textAlign: 'left',
-                            padding: '6px 8px',
-                            borderBottom: `2px solid ${REBEL.coral}`,
-                            fontWeight: 700,
-                            fontSize: '0.65rem',
-                            textTransform: 'uppercase',
-                            color: REBEL.textDark,
-                            backgroundColor: REBEL.offWhite,
-                          }}
-                        >
-                          Distributie
-                        </th>
-                        {VEHICLES.map((v) => (
-                          <th
-                            key={v.id}
-                            style={{
-                              textAlign: 'center',
-                              padding: '6px 6px',
-                              borderBottom: `2px solid ${REBEL.coral}`,
-                              fontWeight: 700,
-                              fontSize: '0.6rem',
-                              textTransform: 'uppercase',
-                              color: REBEL.textDark,
-                              backgroundColor: REBEL.offWhite,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {v.name.length > 15 ? v.name.substring(0, 12) + '...' : v.name}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const { DELIVERY_PROFILES, DISTRIBUTIONS } = require('@/lib/model-data');
-                        const profileKeys = Object.keys(DELIVERY_PROFILES).filter((k: string) =>
-                          k.startsWith(`${func.id}_`)
-                        );
-
-                        return profileKeys.map((profileKey: string) => {
-                          const profile = DELIVERY_PROFILES[profileKey];
-                          const distId = profileKey.split('_')[1];
-                          const dist = DISTRIBUTIONS.find((d: { id: string }) => d.id === distId);
-                          const distName = dist ? dist.name : distId;
-
-                          return (
-                            <tr key={profileKey}>
-                              <td
-                                style={{
-                                  padding: '5px 8px',
-                                  borderBottom: `1px solid ${REBEL.gridLine}`,
-                                  fontWeight: 600,
-                                  color: REBEL.textDark,
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {distName}
-                              </td>
-                              {VEHICLES.map((v, vi) => (
-                                <td
-                                  key={v.id}
-                                  style={{
-                                    textAlign: 'center',
-                                    padding: '5px 6px',
-                                    borderBottom: `1px solid ${REBEL.gridLine}`,
-                                    color: profile.duration[vi] > 0 ? REBEL.textDark : REBEL.tabInactive,
-                                  }}
-                                >
-                                  {profile.duration[vi] > 0 ? profile.duration[vi] : '-'}
-                                </td>
-                              ))}
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })()}
+        {selectedFunction && selectedFunction !== 'algemeen' && selectedFunction !== 'parameters' && (
+          <ExcelPanel title={`Beleveringsprofiel: ${state.allFunctions.find((f) => f.id === selectedFunction)?.name ?? selectedFunction}`}>
+            <DeliveryProfileEditor
+              state={state}
+              theme="rebel"
+              functionId={selectedFunction}
+              onBack={() => setSelectedFunction('algemeen')}
+            />
           </ExcelPanel>
         )}
       </div>
@@ -2259,6 +2012,7 @@ export default function RebelExcelLayout({
         >
           {activeTab === 'cover' && renderCoverTab()}
           {activeTab === 'handleiding' && renderHandleidingTab()}
+          {activeTab === 'casus' && renderCasusTab()}
           {activeTab === 'cockpit' && renderCockpitTab()}
           {activeTab === 'inputs' && renderInputsTab()}
           {activeTab === 'algemeen' && renderAlgemeenTab()}

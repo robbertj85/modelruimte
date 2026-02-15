@@ -35,6 +35,29 @@ import {
 } from './model-data';
 
 // ---------------------------------------------------------------------------
+// Types for custom entries
+// ---------------------------------------------------------------------------
+
+export interface VehicleDef {
+  id: string;
+  name: string;
+  length: number;
+}
+
+export interface FunctionDef {
+  id: string;
+  name: string;
+  unit: string;
+  description: string;
+}
+
+export interface DistributionDef {
+  id: string;
+  name: string;
+  deliveryDays: number;
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -47,6 +70,22 @@ export interface SimulationInput {
   clusterServiceLevels: Record<number, number>;
   /** Number of Monte Carlo iterations (default 1000) */
   numSimulations?: number;
+
+  // --- Advanced overrides ---
+  /** Full list of vehicles (built-in + custom). If provided, replaces VEHICLES. */
+  vehicles?: VehicleDef[];
+  /** Full list of functions (built-in + custom). If provided, replaces FUNCTIONS. */
+  functions?: FunctionDef[];
+  /** Full list of distributions (built-in + custom). If provided, replaces DISTRIBUTIONS. */
+  distributions?: DistributionDef[];
+  /** Override vehicle lengths by vehicle ID */
+  vehicleLengths?: Record<string, number>;
+  /** Override delivery days by distribution ID */
+  deliveryDays?: Record<string, number>;
+  /** Override delivery profiles (merged with defaults) */
+  deliveryProfiles?: Record<string, DeliveryProfile>;
+  /** Override simulation interval in minutes */
+  intervalMinutes?: number;
 }
 
 export interface SimulationResult {
@@ -105,7 +144,29 @@ export function runSimulation(input: SimulationInput): SimulationResult {
     numSimulations = SIM_PARAMS.numSimulations,
   } = input;
 
-  const intervalMinutes = SIM_PARAMS.intervalMinutes;
+  // --- Merge overrides with defaults ---
+  const localVehicles: VehicleDef[] = (input.vehicles ?? VEHICLES).map((v) => ({
+    id: v.id,
+    name: v.name,
+    length: input.vehicleLengths?.[v.id] ?? v.length,
+  }));
+  const localFunctions: FunctionDef[] = (input.functions ?? FUNCTIONS).map((f) => ({
+    id: f.id,
+    name: f.name,
+    unit: f.unit,
+    description: f.description,
+  }));
+  const localDistributions: DistributionDef[] = (input.distributions ?? DISTRIBUTIONS).map((d) => ({
+    id: d.id,
+    name: d.name,
+    deliveryDays: input.deliveryDays?.[d.id] ?? d.deliveryDays,
+  }));
+  const localProfiles: Record<string, DeliveryProfile> = {
+    ...DELIVERY_PROFILES,
+    ...input.deliveryProfiles,
+  };
+  const intervalMinutes = input.intervalMinutes ?? SIM_PARAMS.intervalMinutes;
+  const numVehicles = localVehicles.length;
 
   // Total intervals in a day: sum of intervals per period
   // Each period has (periodHours * 60 / intervalMinutes) intervals
@@ -128,21 +189,21 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   // For each vehicle index (0..5), collect all F×D combinations that produce
   // arrivals for that vehicle type.
 
-  const vehicleArrivalSpecs: ArrivalSpec[][] = VEHICLES.map(() => []);
+  const vehicleArrivalSpecs: ArrivalSpec[][] = localVehicles.map(() => []);
   /** Deterministic expected arrivals per day per vehicle type */
-  const expectedArrivalsPerDay: number[] = new Array(VEHICLES.length).fill(0);
+  const expectedArrivalsPerDay: number[] = new Array(numVehicles).fill(0);
 
-  for (const func of FUNCTIONS) {
+  for (const func of localFunctions) {
     const numUnits = functionCounts[func.id] ?? 0;
     if (numUnits === 0) continue;
 
-    for (const dist of DISTRIBUTIONS) {
+    for (const dist of localDistributions) {
       const profileKey = `${func.id}_${dist.id}`;
-      const profile: DeliveryProfile | undefined = DELIVERY_PROFILES[profileKey];
+      const profile: DeliveryProfile | undefined = localProfiles[profileKey];
       if (!profile) continue;
 
-      for (let v = 0; v < VEHICLES.length; v++) {
-        const stopsPerWeekPerUnit = profile.stopsPerWeekPerUnit[v];
+      for (let v = 0; v < numVehicles; v++) {
+        const stopsPerWeekPerUnit = profile.stopsPerWeekPerUnit[v] ?? 0;
         if (stopsPerWeekPerUnit === 0) continue;
 
         const periodDist = profile.periodDistribution[v];
@@ -188,16 +249,17 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   // -----------------------------------------------------------------------
 
   // For each vehicle type, store the peak simultaneous vehicles per iteration.
-  const peakPerIteration: number[][] = VEHICLES.map(() => new Array(numSimulations));
+  const peakPerIteration: number[][] = localVehicles.map(() => new Array(numSimulations));
 
   // Pre-compute cluster mapping and vehicle indices per cluster
   const clusterMap = new Map<number, { vehicleIds: string[], vehicleIndices: number[] }>();
-  for (const veh of VEHICLES) {
+  for (let vi = 0; vi < numVehicles; vi++) {
+    const veh = localVehicles[vi];
     const cid = clusterAssignments[veh.id] ?? 1;
     if (!clusterMap.has(cid)) clusterMap.set(cid, { vehicleIds: [], vehicleIndices: [] });
     const cluster = clusterMap.get(cid)!;
     cluster.vehicleIds.push(veh.id);
-    cluster.vehicleIndices.push(VEHICLES.indexOf(veh));
+    cluster.vehicleIndices.push(vi);
   }
 
   // Flat arrays for percentile computation (Excel-matching approach):
@@ -213,9 +275,9 @@ export function runSimulation(input: SimulationInput): SimulationResult {
 
   for (let sim = 0; sim < numSimulations; sim++) {
     // Track present vehicles per type at each interval for cluster aggregation
-    const vehiclePresentAtInterval: number[][] = VEHICLES.map(() => new Array(totalIntervals).fill(0));
+    const vehiclePresentAtInterval: number[][] = localVehicles.map(() => new Array(totalIntervals).fill(0));
 
-    for (let v = 0; v < VEHICLES.length; v++) {
+    for (let v = 0; v < numVehicles; v++) {
       const specs = vehicleArrivalSpecs[v];
       if (specs.length === 0) {
         peakPerIteration[v][sim] = 0;
@@ -261,7 +323,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
         let space = 0;
         let vehicles = 0;
         for (const vi of vehicleIndices) {
-          space += vehiclePresentAtInterval[vi][t] * VEHICLES[vi].length;
+          space += vehiclePresentAtInterval[vi][t] * localVehicles[vi].length;
           vehicles += vehiclePresentAtInterval[vi][t];
         }
         clusterPeriodSpace.get(clusterId)![period].push(space);
@@ -269,8 +331,8 @@ export function runSimulation(input: SimulationInput): SimulationResult {
       }
 
       let overallSpace = 0;
-      for (let v = 0; v < VEHICLES.length; v++) {
-        overallSpace += vehiclePresentAtInterval[v][t] * VEHICLES[v].length;
+      for (let v = 0; v < numVehicles; v++) {
+        overallSpace += vehiclePresentAtInterval[v][t] * localVehicles[v].length;
       }
       overallPeriodSpace[period].push(overallSpace);
     }
@@ -311,7 +373,7 @@ export function runSimulation(input: SimulationInput): SimulationResult {
   const serviceLevelsArray = Array.from(allServiceLevels).sort((a, b) => a - b);
 
   // Build vehicle results
-  const vehicleResults: SimulationResult['vehicleResults'] = VEHICLES.map((veh, v) => {
+  const vehicleResults: SimulationResult['vehicleResults'] = localVehicles.map((veh, v) => {
     const clusterId = clusterAssignments[veh.id] ?? 1;
     const clusterSL = clusterServiceLevels[clusterId] ?? 0.95;
 

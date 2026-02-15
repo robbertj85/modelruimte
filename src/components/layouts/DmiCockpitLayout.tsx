@@ -18,8 +18,11 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { VEHICLES, FUNCTIONS } from '@/lib/model-data';
 import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
-import { COVER, HANDLEIDING_SECTIONS, PARTNER_LOGOS } from '@/lib/content';
+import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT } from '@/lib/content';
+import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
+import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
+import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
 import {
   DMI,
   PERIOD_COLORS,
@@ -168,7 +171,7 @@ function EmptyState({ message }: { message: string }) {
 // Main Layout Component
 // ---------------------------------------------------------------------------
 
-type DmiNavMode = 'cockpit' | 'cover' | 'handleiding';
+type DmiNavMode = 'cockpit' | 'cover' | 'handleiding' | 'casus' | 'parameters';
 
 export default function DmiCockpitLayout({
   state,
@@ -180,6 +183,8 @@ export default function DmiCockpitLayout({
   onLayoutChange: (layout: LayoutType) => void;
 }) {
   const [navMode, setNavMode] = useState<DmiNavMode>('cockpit');
+  const [extendedSim, setExtendedSim] = useState(false);
+  const [paramView, setParamView] = useState<'algemeen' | string>('algemeen');
 
   // --- Computed values ---
   const chosenServiceLevel = useMemo(() => {
@@ -271,12 +276,12 @@ export default function DmiCockpitLayout({
                   margin: '4px 0 0 0',
                 }}
               >
-                {navMode === 'cockpit' ? 'Cockpit' : navMode === 'cover' ? 'Cover' : 'Handleiding'}
+                {navMode === 'cockpit' ? 'Cockpit' : navMode === 'cover' ? 'Cover' : navMode === 'casus' ? 'Casus' : navMode === 'parameters' ? 'Parameters' : 'Handleiding'}
               </p>
             </div>
             {/* Nav buttons */}
             <div style={{ display: 'flex', gap: '4px' }}>
-              {(['cover', 'handleiding', 'cockpit'] as DmiNavMode[]).map((mode) => (
+              {(['cover', 'handleiding', 'casus', 'cockpit', 'parameters'] as DmiNavMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setNavMode(mode)}
@@ -305,8 +310,8 @@ export default function DmiCockpitLayout({
             <Image
               src="/dmi-logo-diap.png"
               alt="DMI Logo"
-              width={120}
-              height={40}
+              width={200}
+              height={64}
               style={{ objectFit: 'contain' }}
               priority
             />
@@ -367,44 +372,33 @@ export default function DmiCockpitLayout({
                 {COVER.description}
               </p>
 
-              {/* Partner logos grid */}
-              <div
-                style={{
-                  borderTop: `1px solid ${DMI.blueTint2}`,
-                  paddingTop: '32px',
-                }}
-              >
-                <p style={{ ...labelMono, marginBottom: '20px' }}>Partners</p>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center',
-                    gap: '32px',
-                    alignItems: 'center',
-                  }}
-                >
-                  {PARTNER_LOGOS.map((logo) => (
-                    <div
-                      key={logo.src}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '8px',
-                      }}
-                    >
-                      <Image
-                        src={logo.src}
-                        alt={logo.alt}
-                        width={100}
-                        height={50}
-                        style={{ objectFit: 'contain', maxHeight: '50px' }}
-                      />
-                      <span style={{ ...bodyText, fontSize: '0.65rem', color: DMI.darkGray }}>
-                        {logo.organization}
-                      </span>
+              {/* Partner logos — grouped by role */}
+              <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '32px' }}>
+                {PARTNER_SECTIONS.map((section) => (
+                  <div key={section.label} style={{ marginBottom: '24px' }}>
+                    <p style={{ ...bodyText, fontSize: '0.75rem', fontStyle: 'italic', color: DMI.darkGray, marginBottom: '12px' }}>
+                      {section.label}
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '32px', alignItems: 'center' }}>
+                      {section.logos.map((logo) => (
+                        <Image
+                          key={logo.src}
+                          src={logo.src}
+                          alt={logo.alt}
+                          width={110}
+                          height={50}
+                          style={{ objectFit: 'contain', maxHeight: '50px' }}
+                        />
+                      ))}
                     </div>
+                  </div>
+                ))}
+                <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '16px', marginTop: '8px' }}>
+                  <p style={{ ...labelMono, marginBottom: '4px' }}>{CONTACT.label}</p>
+                  {CONTACT.lines.map((line) => (
+                    <p key={line} style={{ ...bodyText, fontSize: '0.75rem', color: DMI.darkGray, margin: 0, lineHeight: 1.6 }}>
+                      {line}
+                    </p>
                   ))}
                 </div>
               </div>
@@ -456,6 +450,12 @@ export default function DmiCockpitLayout({
                         {p}
                       </p>
                     ))}
+                    {section.tables?.map((table, ti) => (
+                      <HandleidingTableRenderer key={ti} table={table} />
+                    ))}
+                    {section.diagrams?.map((key) => (
+                      <HandleidingDiagram key={key} diagramKey={key} />
+                    ))}
                   </div>
                 </div>
               ))}
@@ -477,6 +477,153 @@ export default function DmiCockpitLayout({
                 minder benodigde ruimte, maar een groter risico op tekorten bij piekdrukte.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* ================================================================
+            CASUS VIEW
+        ================================================================ */}
+        {navMode === 'casus' && (
+          <div style={{ padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
+            <h2 style={{ ...heading, fontSize: '1.6rem', marginBottom: '8px' }}>
+              {CASUS_GERARD_DOUSTRAAT.title}
+            </h2>
+            <p style={{ ...bodyText, fontSize: '0.95rem', color: DMI.mediumBlue, marginBottom: '20px' }}>
+              {CASUS_GERARD_DOUSTRAAT.subtitle}
+            </p>
+            <p style={{ ...bodyText, fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '28px', color: DMI.darkGray }}>
+              {CASUS_GERARD_DOUSTRAAT.intro}
+            </p>
+
+            {CASUS_GERARD_DOUSTRAAT.sections.map((section, sIdx) => (
+              <div
+                key={sIdx}
+                style={{
+                  backgroundColor: DMI.white,
+                  borderRadius: '8px',
+                  padding: '20px 24px',
+                  marginBottom: '16px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                }}
+              >
+                <h3 style={{ ...heading, fontSize: '1.1rem', marginBottom: '12px' }}>
+                  {section.title}
+                </h3>
+                {section.paragraphs.map((p, pIdx) => (
+                  <p key={pIdx} style={{ ...bodyText, fontSize: '0.85rem', lineHeight: 1.7, whiteSpace: 'pre-line', marginBottom: '8px' }}>
+                    {p}
+                  </p>
+                ))}
+                {section.images && section.images.map((img, iIdx) => (
+                  <figure key={iIdx} style={{ margin: '12px 0 0 0' }}>
+                    <img
+                      src={img.src}
+                      alt={img.alt}
+                      style={{ width: '100%', borderRadius: '6px', border: `1px solid ${DMI.blueTint2}` }}
+                    />
+                    {img.caption && (
+                      <figcaption style={{ ...bodyText, fontSize: '0.7rem', color: DMI.darkGray, marginTop: '6px', fontStyle: 'italic' }}>
+                        {img.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            ))}
+
+            <div
+              style={{
+                backgroundColor: DMI.white,
+                borderRadius: '8px',
+                padding: '20px 24px',
+                marginBottom: '16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+              }}
+            >
+              <h3 style={{ ...heading, fontSize: '1.1rem', marginBottom: '12px' }}>
+                Probeer het zelf
+              </h3>
+              <p style={{ ...bodyText, fontSize: '0.85rem', lineHeight: 1.7, marginBottom: '16px' }}>
+                Laad de invoerwaarden van de Gerard Doustraat casus in het model, of begin met een leeg model.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => { state.resetToGerardDoustraat(); setNavMode('cockpit'); }}
+                  style={{
+                    padding: '8px 16px', borderRadius: '4px', border: 'none',
+                    backgroundColor: DMI.yellow, color: DMI.darkBlue,
+                    fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                    fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                  }}
+                >
+                  Laad Casus Gerard Doustraat
+                </button>
+                <button
+                  onClick={() => { state.resetToBlank(); setNavMode('cockpit'); }}
+                  style={{
+                    padding: '8px 16px', borderRadius: '4px',
+                    border: `2px solid ${DMI.darkBlue}`, backgroundColor: 'transparent',
+                    color: DMI.darkBlue,
+                    fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                    fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                  }}
+                >
+                  Begin met leeg model
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================
+            PARAMETERS VIEW
+        ================================================================ */}
+        {navMode === 'parameters' && (
+          <div style={{ padding: '32px', maxWidth: '1100px', margin: '0 auto' }}>
+            {paramView === 'algemeen' ? (
+              <>
+                <Panel title="Algemene Parameters">
+                  <AlgemeenEditor state={state} theme="dmi" />
+                </Panel>
+                <div style={{ marginTop: '16px' }}>
+                  <Panel title="Beleveringsprofielen">
+                    <p style={{ ...bodyText, fontSize: '0.85rem', marginBottom: '16px', color: DMI.darkGray }}>
+                      Selecteer een functie om het beleveringsprofiel te bewerken.
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {state.allFunctions.map((func) => (
+                        <button
+                          key={func.id}
+                          onClick={() => setParamView(func.id)}
+                          style={{
+                            padding: '5px 14px',
+                            borderRadius: '4px',
+                            border: `1px solid ${DMI.blueTint2}`,
+                            backgroundColor: DMI.blueTint3,
+                            color: DMI.darkBlue,
+                            fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                            fontWeight: 500,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {func.name}
+                        </button>
+                      ))}
+                    </div>
+                  </Panel>
+                </div>
+              </>
+            ) : (
+              <Panel title="Beleveringsprofiel">
+                <DeliveryProfileEditor
+                  state={state}
+                  theme="dmi"
+                  functionId={paramView}
+                  onBack={() => setParamView('algemeen')}
+                />
+              </Panel>
+            )}
           </div>
         )}
 
@@ -547,6 +694,30 @@ export default function DmiCockpitLayout({
           >
             {/* Panel 1: Inventarisatie Functies */}
             <Panel title="Inventarisatie Functies">
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                <button
+                  onClick={state.resetToGerardDoustraat}
+                  style={{
+                    padding: '4px 10px', borderRadius: '4px', border: `1px solid ${DMI.blueTint1}`,
+                    backgroundColor: DMI.blueTint3, color: DMI.darkBlue,
+                    fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                    fontWeight: 500, fontSize: '0.65rem', cursor: 'pointer',
+                  }}
+                >
+                  Gerard Doustraat
+                </button>
+                <button
+                  onClick={state.resetToBlank}
+                  style={{
+                    padding: '4px 10px', borderRadius: '4px', border: `1px solid ${DMI.blueTint1}`,
+                    backgroundColor: DMI.blueTint3, color: DMI.darkBlue,
+                    fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                    fontWeight: 500, fontSize: '0.65rem', cursor: 'pointer',
+                  }}
+                >
+                  Leeg model
+                </button>
+              </div>
               <div style={{ display: 'flex', gap: '16px' }}>
                 {/* Left: function inputs with mini bars */}
                 <div style={{ flex: '1 1 55%', maxHeight: '440px', overflowY: 'auto' }}>
@@ -993,11 +1164,27 @@ export default function DmiCockpitLayout({
                   <p style={{ ...labelMono, marginBottom: '6px' }}>Simulaties: {state.numSimulations.toLocaleString('nl-NL')}</p>
                   <Slider
                     min={100}
-                    max={5000}
-                    step={100}
+                    max={extendedSim ? 50000 : 5000}
+                    step={extendedSim ? 500 : 100}
                     value={[state.numSimulations]}
                     onValueChange={(vals) => state.setNumSimulations(vals[0])}
                   />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={extendedSim}
+                        onChange={(e) => {
+                          setExtendedSim(e.target.checked);
+                          if (!e.target.checked && state.numSimulations > 5000) {
+                            state.setNumSimulations(5000);
+                          }
+                        }}
+                        style={{ accentColor: DMI.darkBlue }}
+                      />
+                      <span style={{ ...labelMono, fontSize: '0.65rem' }}>Uitgebreid (max 50.000)</span>
+                    </label>
+                  </div>
                 </div>
                 <button
                   onClick={state.handleRun}
