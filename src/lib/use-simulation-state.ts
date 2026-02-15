@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   VEHICLES,
   FUNCTIONS,
@@ -19,7 +19,6 @@ import {
   type DeliveryProfile,
 } from '@/lib/model-data';
 import {
-  runSimulation,
   type SimulationResult,
   type VehicleDef,
   type FunctionDef,
@@ -235,30 +234,67 @@ export function useSimulationState(): SimulationState {
     []
   );
 
-  const handleRun = useCallback(() => {
-    setIsRunning(true);
-    setTimeout(() => {
-      try {
-        const result = runSimulation({
-          functionCounts,
-          clusterAssignments,
-          clusterServiceLevels,
-          numSimulations,
-          vehicles: allVehicles,
-          functions: allFunctions,
-          distributions: allDistributions,
-          vehicleLengths,
-          deliveryDays,
-          deliveryProfiles,
-          intervalMinutes,
-        });
-        setResults(result);
-      } catch (err) {
-        console.error('Simulation error:', err);
-      } finally {
-        setIsRunning(false);
+  const workerRef = useRef<Worker | null>(null);
+  const isRunningRef = useRef(false);
+
+  // Cleanup worker on unmount
+  useEffect(() => {
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
       }
-    }, 50);
+    };
+  }, []);
+
+  const handleRun = useCallback(() => {
+    if (isRunningRef.current) return;
+    isRunningRef.current = true;
+    setIsRunning(true);
+
+    // Terminate any previous worker
+    if (workerRef.current) {
+      workerRef.current.terminate();
+    }
+
+    const worker = new Worker(
+      new URL('./simulation-worker.ts', import.meta.url)
+    );
+    workerRef.current = worker;
+
+    worker.onmessage = (e: MessageEvent<{ type: string; data?: SimulationResult; message?: string }>) => {
+      if (e.data.type === 'result' && e.data.data) {
+        setResults(e.data.data);
+      } else if (e.data.type === 'error') {
+        console.error('Simulation error:', e.data.message);
+      }
+      setIsRunning(false);
+      isRunningRef.current = false;
+      worker.terminate();
+      workerRef.current = null;
+    };
+
+    worker.onerror = (err) => {
+      console.error('Simulation worker error:', err);
+      setIsRunning(false);
+      isRunningRef.current = false;
+      worker.terminate();
+      workerRef.current = null;
+    };
+
+    worker.postMessage({
+      functionCounts,
+      clusterAssignments,
+      clusterServiceLevels,
+      numSimulations,
+      vehicles: allVehicles,
+      functions: allFunctions,
+      distributions: allDistributions,
+      vehicleLengths,
+      deliveryDays,
+      deliveryProfiles,
+      intervalMinutes,
+    });
   }, [functionCounts, clusterAssignments, clusterServiceLevels, numSimulations, allVehicles, allFunctions, allDistributions, vehicleLengths, deliveryDays, deliveryProfiles, intervalMinutes]);
 
   const toggleCluster = useCallback((clusterId: number) => {
