@@ -22,6 +22,7 @@ import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DO
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
+import FeedbackButton from '@/components/FeedbackButton';
 import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
 import {
   DMI,
@@ -350,6 +351,7 @@ export default function DmiCockpitLayout({
 
           {!isMobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <FeedbackButton variant="dmi" />
               <LayoutSwitcher current={layout} onChange={onLayoutChange} />
               <Image
                 src="/dmi-logo-diap.png"

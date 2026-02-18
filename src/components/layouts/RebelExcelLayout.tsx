@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Loader2, Play } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
+import FeedbackButton from '@/components/FeedbackButton';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
@@ -2155,6 +2156,8 @@ export default function RebelExcelLayout({
         })}
         {/* Filler space after tabs */}
         <div style={{ flex: 1 }} />
+        {/* Feedback button */}
+        <FeedbackButton variant="rebel" />
         {/* Rebel branding in tab bar */}
         <div
           style={{

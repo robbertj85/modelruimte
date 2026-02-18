@@ -9,6 +9,7 @@ import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, Chev
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
+import FeedbackButton from '@/components/FeedbackButton';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
@@ -302,6 +303,7 @@ export default function WebappLayout({
                 {state.isRunning ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
                 {state.isRunning ? 'Bezig...' : 'Run Simulaties'}
               </button>
+              <FeedbackButton variant="webapp" />
               <LayoutSwitcher current={layout} onChange={onLayoutChange} />
             </div>
           )}
