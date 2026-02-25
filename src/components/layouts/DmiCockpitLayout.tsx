@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Loader2,
@@ -23,7 +23,12 @@ import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
 import FeedbackButton from '@/components/FeedbackButton';
+import ExportReportButton from '@/components/ExportReportButton';
 import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
+import type { ReportInput } from '@/lib/report-export';
+import type { TutorialState } from '@/lib/use-tutorial';
+import TutorialOverlay from '@/components/TutorialOverlay';
+import { GraduationCap } from 'lucide-react';
 import {
   DMI,
   PERIOD_COLORS,
@@ -181,16 +186,48 @@ export default function DmiCockpitLayout({
   state,
   layout,
   onLayoutChange,
+  tutorial,
 }: {
   state: SimulationState;
   layout: LayoutType;
   onLayoutChange: (layout: LayoutType) => void;
+  tutorial: TutorialState;
 }) {
-  const [navMode, setNavMode] = useState<DmiNavMode>('cockpit');
+  const [navMode, setNavMode] = useState<DmiNavMode>('cover');
   const [handleidingSubTab, setHandleidingSubTab] = useState<HandleidingSubTab>('handleiding');
   const [extendedSim, setExtendedSim] = useState(false);
   const [paramView, setParamView] = useState<'algemeen' | string>('algemeen');
   const { isMobile, isCompact } = useIsMobile();
+
+  // Tutorial: auto-switch nav mode when step changes
+  useEffect(() => {
+    if (!tutorial.isActive) return;
+    const nav = tutorial.currentStep.navigateTo.dmi;
+    if (nav && nav !== navMode) {
+      setNavMode(nav as DmiNavMode);
+    }
+  }, [tutorial.isActive, tutorial.currentStep, tutorial.currentStepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tutorial: auto-run simulation at run-simulation step
+  useEffect(() => {
+    if (!tutorial.isActive || tutorial.currentStep.id !== 'run-simulation') return;
+    if (state.totalFunctions === 0) state.resetToGerardDoustraat();
+    if (!state.results && !state.isRunning) {
+      const t = setTimeout(() => state.handleRun(), 200);
+      return () => clearTimeout(t);
+    }
+  }, [tutorial.isActive, tutorial.currentStep.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tutorial: auto-expand first cluster at result-charts step
+  useEffect(() => {
+    if (!tutorial.isActive || tutorial.currentStep.id !== 'result-charts') return;
+    if (state.results && state.clusterIds.length > 0) {
+      const firstCluster = state.clusterIds[0];
+      if (!state.expandedClusters[firstCluster]) {
+        state.toggleCluster(firstCluster);
+      }
+    }
+  }, [tutorial.isActive, tutorial.currentStep.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Computed values ---
   const chosenServiceLevel = useMemo(() => {
@@ -323,7 +360,7 @@ export default function DmiCockpitLayout({
               )}
             </div>
             {/* Nav buttons */}
-            <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: isMobile ? '100%' : 'auto' }}>
+            <div data-tutorial="nav-tabs" style={{ display: 'flex', gap: '4px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: isMobile ? '100%' : 'auto' }}>
               {(['cover', 'handleiding', 'cockpit', 'parameters'] as DmiNavMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -351,6 +388,21 @@ export default function DmiCockpitLayout({
 
           {!isMobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {state.results && (
+                <ExportReportButton
+                  variant="dmi"
+                  reportInput={{
+                    functionCounts: state.functionCounts,
+                    clusterAssignments: state.clusterAssignments,
+                    clusterServiceLevels: state.clusterServiceLevels,
+                    clusterNames: state.clusterNames,
+                    numSimulations: state.numSimulations,
+                    results: state.results,
+                    allFunctions: state.allFunctions,
+                    allVehicles: state.allVehicles,
+                  } as ReportInput}
+                />
+              )}
               <FeedbackButton variant="dmi" />
               <LayoutSwitcher current={layout} onChange={onLayoutChange} />
               <Image
@@ -493,25 +545,51 @@ export default function DmiCockpitLayout({
               Handleiding Rekentool Ruimte voor Stadslogistiek
             </h2>
 
-            {/* Sub-toggle: Handleiding / Casus */}
+            {/* Sub-toggle: Uitleg / Interactieve Tutorial / Casus */}
             <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', backgroundColor: DMI.blueTint3, borderRadius: '8px', padding: '3px', width: 'fit-content' }}>
-              {([['handleiding', 'Uitleg'], ['casus', 'Casus Gerard Doustraat']] as const).map(([id, label]) => (
-                <button
-                  key={id}
-                  onClick={() => setHandleidingSubTab(id)}
-                  style={{
-                    padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                    fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-                    fontWeight: handleidingSubTab === id ? 700 : 500,
-                    backgroundColor: handleidingSubTab === id ? DMI.white : 'transparent',
-                    color: handleidingSubTab === id ? DMI.darkBlue : DMI.blueTint1,
-                    boxShadow: handleidingSubTab === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
+              <button
+                onClick={() => setHandleidingSubTab('handleiding')}
+                style={{
+                  padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                  fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                  fontWeight: handleidingSubTab === 'handleiding' ? 700 : 500,
+                  backgroundColor: handleidingSubTab === 'handleiding' ? DMI.white : 'transparent',
+                  color: handleidingSubTab === 'handleiding' ? DMI.darkBlue : DMI.blueTint1,
+                  boxShadow: handleidingSubTab === 'handleiding' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Uitleg
+              </button>
+              <button
+                onClick={tutorial.start}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                  fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                  fontWeight: 600,
+                  backgroundColor: `${DMI.yellow}25`,
+                  color: DMI.darkBlue,
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <GraduationCap size={14} />
+                Interactieve Tutorial
+              </button>
+              <button
+                onClick={() => setHandleidingSubTab('casus')}
+                style={{
+                  padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                  fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                  fontWeight: handleidingSubTab === 'casus' ? 700 : 500,
+                  backgroundColor: handleidingSubTab === 'casus' ? DMI.white : 'transparent',
+                  color: handleidingSubTab === 'casus' ? DMI.darkBlue : DMI.blueTint1,
+                  boxShadow: handleidingSubTab === 'casus' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Casus Gerard Doustraat
+              </button>
             </div>
             {handleidingSubTab === 'handleiding' && (
               <>
@@ -758,6 +836,7 @@ export default function DmiCockpitLayout({
             KPI ROW
         ================================================================ */}
         <div
+          data-tutorial="kpi-results"
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isCompact ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
@@ -815,9 +894,11 @@ export default function DmiCockpitLayout({
             }}
           >
             {/* Panel 1: Inventarisatie Functies */}
+            <div data-tutorial="function-inputs">
             <Panel title="Inventarisatie Functies">
               <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
                 <button
+                  data-tutorial="preset-gerard"
                   onClick={state.resetToGerardDoustraat}
                   style={{
                     padding: '4px 10px', borderRadius: '4px', border: `1px solid ${DMI.blueTint1}`,
@@ -940,6 +1021,7 @@ export default function DmiCockpitLayout({
                 </div>
               </div>
             </Panel>
+            </div>
 
             {/* Panel 2: Verwacht # Voertuigen */}
             <Panel title="Verwacht # Voertuigen">
@@ -1117,6 +1199,7 @@ export default function DmiCockpitLayout({
             </Panel>
 
             {/* Panel 2: Service Levels & Clustering */}
+            <div data-tutorial="service-levels">
             <Panel title="Service Levels & Clustering">
               <div style={{ ...bodyText, fontSize: '0.8rem', lineHeight: 1.6 }}>
                 <p style={{ marginBottom: '12px' }}>
@@ -1152,7 +1235,10 @@ export default function DmiCockpitLayout({
               </div>
             </Panel>
 
+            </div>
+
             {/* Panel 3: Bepaling Clusters & Service Level */}
+            <div data-tutorial="cluster-matrix">
             <Panel title="Bepaling Clusters & Service Level">
               {/* Cluster checkbox matrix */}
               <div style={{ overflowX: 'auto' }}>
@@ -1300,7 +1386,7 @@ export default function DmiCockpitLayout({
               </div>
 
               {/* Simulation count + Run button */}
-              <div style={{ marginTop: '14px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '12px' : '16px' }}>
+              <div data-tutorial="run-simulation" style={{ marginTop: '14px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', gap: isMobile ? '12px' : '16px' }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ ...labelMono, marginBottom: '6px' }}>Simulaties: {state.numSimulations.toLocaleString('nl-NL')}</p>
                   <Slider
@@ -1372,12 +1458,14 @@ export default function DmiCockpitLayout({
                 </div>
               )}
             </Panel>
+            </div>
           </div>
 
           {/* ============================================================
               ROW 3: Details per Cluster
           ============================================================ */}
           {state.results && (
+            <div data-tutorial="result-charts">
             <Panel title="Details per Cluster">
               <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : 'repeat(3, 1fr)', gap: '8px' }}>
               {state.results.clusterResults.map((cr) => {
@@ -1561,6 +1649,7 @@ export default function DmiCockpitLayout({
               })}
               </div>
             </Panel>
+            </div>
           )}
 
           {/* ============================================================
@@ -1628,6 +1717,7 @@ export default function DmiCockpitLayout({
           to { transform: rotate(360deg); }
         }
       `}</style>
+      <TutorialOverlay tutorial={tutorial} onGoToCasus={() => { setNavMode('handleiding'); setHandleidingSubTab('casus'); }} />
     </TooltipProvider>
   );
 }

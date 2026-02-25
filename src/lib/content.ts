@@ -238,6 +238,33 @@ export const HANDLEIDING_SECTIONS: HandleidingSection[] = [
     ],
     diagrams: ['simulation-process'],
   },
+  {
+    title: '6. Beoogd Gebruik',
+    paragraphs: [
+      'De Rekentool Ruimte voor Stadslogistiek kan zelfstandig worden gebruikt door gemeenten, stedenbouwkundigen en vastgoedontwikkelaars. Het model biedt een eerste, onderbouwde inschatting van de ruimtevraag van stadslogistiek op gebiedsniveau. Voor een optimale toepassing adviseren wij om de resultaten te bespreken met logistiek experts of ruimtelijk adviseurs, zodat de uitkomsten goed kunnen worden vertaald naar de lokale context.',
+      'Het model kan worden ingezet bij zowel **herinrichtingsprojecten** (bestaande situatie) als bij **nieuwe gebiedsontwikkelingen**. De output vormt een basis voor het opstellen van ruimtelijke scenario\'s, het onderbouwen van beleidsadvies, en het faciliteren van een geïnformeerd gesprek tussen stedenbouwkundigen, beleidsadviseurs, vastgoedontwikkelaars en logistiek adviseurs.',
+      'De modelresultaten zijn uitdrukkelijk **geen definitief ontwerp**. Een ruimtelijke vertaling — rekening houdend met het straatprofiel, de inrichting, en lokale omstandigheden — is altijd noodzakelijk. Het wordt aanbevolen om de resultaten te valideren met lokale kennis en veldonderzoek.',
+    ],
+  },
+  {
+    title: '7. Beperkingen en aandachtspunten',
+    paragraphs: [
+      'De Rekentool Ruimte voor Stadslogistiek is een **eerste prototype**. De resultaten zijn inschattingen en vormen een eerste aanzet om meer grip te krijgen op de ruimtevraag van logistieke voertuigen. Hieronder staan de belangrijkste beperkingen en aandachtspunten bij het gebruik van het model.',
+      '**Beperkt aantal functies:** Het model bevat 12 stedelijke functies. Socio-maatschappelijke voorzieningen (scholen, sportfaciliteiten, zorginstellingen) ontbreken nog en kunnen als workaround worden toebedeeld aan kantoor klein, middel of groot.',
+      '**Geen detailniveau binnen functies:** Er wordt geen onderscheid gemaakt naar omvang of type binnen een functie (bv. AH to go vs. AH XL, of een klein hotel vs. een groot hotel). Het model werkt met gemiddelden in de beleveringsprofielen.',
+      '**Onvolledige logistieke stromen:** Het model houdt nog geen rekening met alle typen logistieke activiteiten. Afvalophaling, bouwverkeer, verhuizingen en maaltijdbezorgingen zijn nog niet opgenomen. De berekende ruimtevraag is daarom een **ondergrens**.',
+      '**Generieke beleveringsprofielen:** De beleveringsprofielen zijn gebaseerd op generieke data (o.a. Outlooks Stadslogistiek van TNO) en bestaande aannames. Met betere data — bijvoorbeeld op casestudie-niveau van individuele bedrijven of op gebiedsniveau — kunnen deze profielen nauwkeuriger worden gemaakt.',
+      '**Geen onderscheid naar wijktype:** Het model maakt geen onderscheid naar type wijk (historische binnenstad, oude stadswijk, hoogbouw, autoluwe wijk, suburbia). Dit kan deels worden ondervangen door het serviceniveau aan te passen op basis van de lokale context (zie ook Outlook Stadslogistiek 2035).',
+      '**Bereikbaarheid en inrichting niet meegenomen:** De output van het model is het aantal en type voertuigen op gebiedsniveau. De bereikbaarheid en fysieke inrichting van een gebied (bv. smalle straten, eenrichtingsverkeer) worden niet meegenomen in de berekening.',
+      '**Dagprofiel:** Het model simuleert één gemiddelde dag. Er is geen onderscheid tussen weekdagen en weekenddagen, en er wordt geen rekening gehouden met seizoensvariatie of piekperiodes (bv. feestdagen).',
+      '**Vast tijdsinterval:** De simulatie werkt met vaste intervallen van 10 minuten. Dit is een pragmatische keuze, maar kan bij zeer korte of zeer lange stops leiden tot afwijkingen.',
+      '**Vaste laad- en losbreedte:** De ruimteberekening gaat uit van een vaste breedte van 3 meter per laad- en losplek. In de praktijk kan dit variëren afhankelijk van het straatprofiel en de inrichting.',
+      '**Geen interactie-effecten:** Het model behandelt functies onafhankelijk van elkaar. In werkelijkheid kunnen functies elkaars logistieke stromen beïnvloeden (bv. een supermarkt naast een horecacluster).',
+      '**Geen interventie-opties:** Het model voorziet niet in het doorrekenen van maatregelen die de ruimtevraag kunnen beïnvloeden, zoals pakketautomaten, inpandig laden en lossen, microhubs of tijdsvensterbeleid. Tijdsvensters zorgen bijvoorbeeld voor meer voertuigen tegelijkertijd, wat de ruimtevraag vergroot. Ontvanger-gedreven afspraken in ketens (bv. tijdsloten voor horeca-leveringen) zijn evenmin opgenomen.',
+      '**Stedelijke trends niet verwerkt:** Het model houdt nog geen rekening met stedelijke trends zoals zero-emissiezones (ZES), die kunnen leiden tot atomisering van logistiek (meer kleinere voertuigen in plaats van minder grote). Ook de opkomst van autovrije gebieden, waarbij logistieke hubs aan de randen van een studiegebied nodig zijn, is niet meegenomen.',
+      '**BVO-omrekentabel is indicatief:** De omrekening van m² BVO naar aantal eenheden (voor ontwikkelprojecten) is een ruwe inschatting. Het effectieve aantal eenheden hangt af van het type ontwikkeling en gebied.',
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------

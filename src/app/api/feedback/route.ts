@@ -12,7 +12,18 @@ const LABEL_MAP: Record<FeedbackType, string> = {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, description, type } = body;
+    const { email, title, description, type } = body;
+
+    // Validate optional email
+    if (email !== undefined && email !== '') {
+      if (typeof email !== 'string' || email.length > 256) {
+        return NextResponse.json({ error: 'Ongeldig e-mailadres.' }, { status: 400 });
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json({ error: 'Ongeldig e-mailadres.' }, { status: 400 });
+      }
+    }
 
     // Validate required fields
     if (!title || typeof title !== 'string' || title.trim().length === 0) {
@@ -40,7 +51,8 @@ export async function POST(request: Request) {
     const label = LABEL_MAP[type as FeedbackType];
     const typeLabel = type === 'bug' ? 'Bug' : type === 'suggestie' ? 'Suggestie' : 'Vraag';
 
-    const issueBody = `**Type:** ${typeLabel}\n\n${description.trim()}\n\n---\n_Ingediend via de Ruimtemodel webapp_`;
+    const emailLine = email ? `**Contact:** ${email.trim()}\n` : '';
+    const issueBody = `**Type:** ${typeLabel}\n${emailLine}\n${description.trim()}\n\n---\n_Ingediend via de Ruimtemodel webapp_`;
 
     const response = await fetch('https://api.github.com/repos/robbertj85/modelruimte/issues', {
       method: 'POST',

@@ -32,6 +32,7 @@ interface FeedbackButtonProps {
 
 export default function FeedbackButton({ variant }: FeedbackButtonProps) {
   const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<FeedbackType>('bug');
@@ -40,6 +41,7 @@ export default function FeedbackButton({ variant }: FeedbackButtonProps) {
   const [issueUrl, setIssueUrl] = useState('');
 
   function resetForm() {
+    setEmail('');
     setTitle('');
     setDescription('');
     setType('bug');
@@ -69,7 +71,7 @@ export default function FeedbackButton({ variant }: FeedbackButtonProps) {
       const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), description: description.trim(), type }),
+        body: JSON.stringify({ email: email.trim() || undefined, title: title.trim(), description: description.trim(), type }),
       });
 
       const data = await res.json();
@@ -193,6 +195,19 @@ export default function FeedbackButton({ variant }: FeedbackButtonProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="feedback-email">E-mailadres <span className="text-muted-foreground font-normal">(optioneel)</span></Label>
+              <Input
+                id="feedback-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="naam@voorbeeld.nl"
+                maxLength={256}
+                disabled={formState === 'submitting'}
+              />
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="feedback-type">Type</Label>
               <Select value={type} onValueChange={(v) => setType(v as FeedbackType)}>

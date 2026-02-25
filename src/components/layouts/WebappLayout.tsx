@@ -1,11 +1,11 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
 import { VEHICLES, FUNCTIONS, LOADING_BAY_WIDTH_M } from '@/lib/model-data';
 import { DMI, PERIOD_COLORS, FUNCTION_COLORS, CLUSTER_COLORS, SERVICE_LEVEL_OPTIONS, MAX_CLUSTERS, heading, bodyText, labelMono } from '@/lib/dmi-theme';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
-import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen, MapPin, RotateCcw, Settings } from 'lucide-react';
+import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen, MapPin, RotateCcw, Settings, FileDown, FileText, Printer } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
@@ -15,6 +15,10 @@ import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DO
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
+import { generateReportMarkdown, downloadMarkdown, downloadPdf, type ReportInput } from '@/lib/report-export';
+import type { TutorialState } from '@/lib/use-tutorial';
+import TutorialOverlay from '@/components/TutorialOverlay';
+import { GraduationCap } from 'lucide-react';
 
 type WebappTab = 'cover' | 'handleiding' | 'dashboard' | 'invoer' | 'parameters' | 'clustering' | 'resultaten';
 type HandleidingSubTab = 'handleiding' | 'casus';
@@ -83,16 +87,70 @@ export default function WebappLayout({
   state,
   layout,
   onLayoutChange,
+  tutorial,
 }: {
   state: SimulationState;
   layout: LayoutType;
   onLayoutChange: (layout: LayoutType) => void;
+  tutorial: TutorialState;
 }) {
-  const [activeTab, setActiveTab] = useState<WebappTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<WebappTab>('cover');
   const [handleidingSubTab, setHandleidingSubTab] = useState<HandleidingSubTab>('handleiding');
   const [extendedSim, setExtendedSim] = useState(false);
   const [paramView, setParamView] = useState<'algemeen' | string>('algemeen');
+  const [runMenuOpen, setRunMenuOpen] = useState(false);
   const { isMobile, isCompact } = useIsMobile();
+
+  // Tutorial: auto-switch tab when step changes
+  useEffect(() => {
+    if (!tutorial.isActive) return;
+    const nav = tutorial.currentStep.navigateTo.webapp;
+    if (nav && nav !== activeTab) {
+      setActiveTab(nav as WebappTab);
+    }
+  }, [tutorial.isActive, tutorial.currentStep, tutorial.currentStepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tutorial: auto-run simulation at run-simulation step
+  useEffect(() => {
+    if (!tutorial.isActive || tutorial.currentStep.id !== 'run-simulation') return;
+    if (state.totalFunctions === 0) state.resetToGerardDoustraat();
+    if (!state.results && !state.isRunning) {
+      // Small delay so preset data settles
+      const t = setTimeout(() => state.handleRun(), 200);
+      return () => clearTimeout(t);
+    }
+  }, [tutorial.isActive, tutorial.currentStep.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tutorial: auto-expand first cluster at result-charts step
+  useEffect(() => {
+    if (!tutorial.isActive || tutorial.currentStep.id !== 'result-charts') return;
+    if (state.results && state.clusterIds.length > 0) {
+      const firstCluster = state.clusterIds[0];
+      if (!state.expandedClusters[firstCluster]) {
+        state.toggleCluster(firstCluster);
+      }
+    }
+  }, [tutorial.isActive, tutorial.currentStep.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const reportInput: ReportInput | null = state.results ? {
+    functionCounts: state.functionCounts,
+    clusterAssignments: state.clusterAssignments,
+    clusterServiceLevels: state.clusterServiceLevels,
+    clusterNames: state.clusterNames,
+    numSimulations: state.numSimulations,
+    results: state.results,
+    allFunctions: state.allFunctions,
+    allVehicles: state.allVehicles,
+  } : null;
+
+  const runMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (runMenuRef.current && !runMenuRef.current.contains(e.target as Node)) setRunMenuOpen(false);
+    }
+    if (runMenuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [runMenuOpen]);
 
   const activeFunctionCount = useMemo(() => {
     return Object.entries(state.functionCounts).filter(([, count]) => count > 0).length;
@@ -235,7 +293,9 @@ export default function WebappLayout({
           </div>
 
           {/* Tab buttons - scrollable on mobile */}
-          <div style={{
+          <div
+            data-tutorial="nav-tabs"
+            style={{
             display: 'flex',
             gap: isMobile ? '0' : '4px',
             overflowX: 'auto',
@@ -280,29 +340,97 @@ export default function WebappLayout({
           {/* Right: Run button + Layout switcher - hidden on mobile (run button moved to top row) */}
           {!isMobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={state.handleRun}
-                disabled={state.isRunning}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 24px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: state.isRunning ? 'not-allowed' : 'pointer',
-                  backgroundColor: state.isRunning ? DMI.darkGray : DMI.darkBlue,
-                  color: DMI.white,
-                  fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(10,54,96,0.3)',
-                }}
-              >
-                {state.isRunning ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-                {state.isRunning ? 'Bezig...' : 'Run Simulaties'}
-              </button>
+              <div ref={runMenuRef} style={{ position: 'relative' }}>
+                <div style={{ display: 'flex' }}>
+                  <button
+                    onClick={() => { state.handleRun(); setRunMenuOpen(false); }}
+                    disabled={state.isRunning}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 20px',
+                      borderRadius: state.results ? '8px 0 0 8px' : '8px',
+                      border: 'none',
+                      cursor: state.isRunning ? 'not-allowed' : 'pointer',
+                      backgroundColor: state.isRunning ? DMI.darkGray : DMI.darkBlue,
+                      color: DMI.white,
+                      fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 8px rgba(10,54,96,0.3)',
+                    }}
+                  >
+                    {state.isRunning ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                    {state.isRunning ? 'Bezig...' : 'Run Simulaties'}
+                  </button>
+                  {state.results && (
+                    <button
+                      onClick={() => setRunMenuOpen((p) => !p)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '10px 8px',
+                        borderRadius: '0 8px 8px 0',
+                        border: 'none',
+                        borderLeft: '1px solid rgba(255,255,255,0.2)',
+                        cursor: 'pointer',
+                        backgroundColor: DMI.darkBlue,
+                        color: DMI.white,
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 8px rgba(10,54,96,0.3)',
+                      }}
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  )}
+                </div>
+                {runMenuOpen && state.results && reportInput && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      marginTop: '4px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                      zIndex: 50,
+                      minWidth: '200px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <button
+                      onClick={() => { const md = generateReportMarkdown(reportInput); downloadMarkdown(md); setRunMenuOpen(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                        padding: '10px 14px', border: 'none', cursor: 'pointer', fontSize: '0.8rem',
+                        backgroundColor: 'transparent', color: '#334155', textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint3; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                    >
+                      <FileText size={14} />
+                      Export rapport (.md)
+                    </button>
+                    <button
+                      onClick={() => { downloadPdf(reportInput); setRunMenuOpen(false); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                        padding: '10px 14px', border: 'none', cursor: 'pointer', fontSize: '0.8rem',
+                        backgroundColor: 'transparent', color: '#334155', textAlign: 'left',
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint3; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                    >
+                      <Printer size={14} />
+                      Export rapport (.pdf)
+                    </button>
+                  </div>
+                )}
+              </div>
               <FeedbackButton variant="webapp" />
               <LayoutSwitcher current={layout} onChange={onLayoutChange} />
             </div>
@@ -423,25 +551,51 @@ export default function WebappLayout({
                 <h2 style={{ ...heading, fontSize: '1.4rem', marginBottom: '12px' }}>
                   Handleiding
                 </h2>
-                {/* Sub-toggle: Handleiding / Casus */}
+                {/* Sub-toggle: Uitleg / Interactieve Tutorial / Casus */}
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: DMI.blueTint3, borderRadius: '8px', padding: '3px', width: 'fit-content' }}>
-                  {([['handleiding', 'Uitleg'], ['casus', 'Casus Gerard Doustraat']] as const).map(([id, label]) => (
-                    <button
-                      key={id}
-                      onClick={() => setHandleidingSubTab(id)}
-                      style={{
-                        padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                        fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-                        fontWeight: handleidingSubTab === id ? 600 : 400,
-                        backgroundColor: handleidingSubTab === id ? DMI.white : 'transparent',
-                        color: handleidingSubTab === id ? DMI.darkBlue : DMI.blueTint1,
-                        boxShadow: handleidingSubTab === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => setHandleidingSubTab('handleiding')}
+                    style={{
+                      padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                      fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                      fontWeight: handleidingSubTab === 'handleiding' ? 600 : 400,
+                      backgroundColor: handleidingSubTab === 'handleiding' ? DMI.white : 'transparent',
+                      color: handleidingSubTab === 'handleiding' ? DMI.darkBlue : DMI.blueTint1,
+                      boxShadow: handleidingSubTab === 'handleiding' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    Uitleg
+                  </button>
+                  <button
+                    onClick={tutorial.start}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                      fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                      fontWeight: 600,
+                      backgroundColor: `${DMI.yellow}25`,
+                      color: DMI.darkBlue,
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <GraduationCap size={14} />
+                    Interactieve Tutorial
+                  </button>
+                  <button
+                    onClick={() => setHandleidingSubTab('casus')}
+                    style={{
+                      padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                      fontSize: '0.8rem', fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
+                      fontWeight: handleidingSubTab === 'casus' ? 600 : 400,
+                      backgroundColor: handleidingSubTab === 'casus' ? DMI.white : 'transparent',
+                      color: handleidingSubTab === 'casus' ? DMI.darkBlue : DMI.blueTint1,
+                      boxShadow: handleidingSubTab === 'casus' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    Casus Gerard Doustraat
+                  </button>
                 </div>
               </div>
 
@@ -736,6 +890,7 @@ export default function WebappLayout({
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                   <button
+                    data-tutorial="preset-gerard"
                     onClick={state.resetToGerardDoustraat}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '6px',
@@ -763,6 +918,7 @@ export default function WebappLayout({
               </div>
 
               {/* Function inputs grid */}
+              <div data-tutorial="function-inputs">
               <WCard title="Functies">
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(460px, 1fr))', gap: '0' }}>
                   {state.allFunctions.map((func, idx) => {
@@ -896,6 +1052,7 @@ export default function WebappLayout({
                   </span>
                 </div>
               </WCard>
+              </div>
 
               {/* Donut chart */}
               {functionDonutData.length > 0 && (
@@ -1002,6 +1159,7 @@ export default function WebappLayout({
 
               <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: '24px' }}>
                 {/* Left column: Cluster assignment matrix */}
+                <div data-tutorial="cluster-matrix">
                 <WCard title="Cluster Toewijzing">
                   <div style={{ overflowX: 'auto' }}>
                     <table
@@ -1128,8 +1286,10 @@ export default function WebappLayout({
                     </table>
                   </div>
                 </WCard>
+                </div>
 
                 {/* Right column: Service levels */}
+                <div data-tutorial="service-levels">
                 <WCard title="Service Levels per Cluster">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {state.clusterIds.map((cid) => {
@@ -1216,9 +1376,11 @@ export default function WebappLayout({
                     })}
                   </div>
                 </WCard>
+                </div>
               </div>
 
               {/* Simulation parameters + run button */}
+              <div data-tutorial="run-simulation">
               <WCard title="Simulatie Instellingen">
                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '16px' : '32px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: isMobile ? '0' : '300px' }}>
@@ -1343,6 +1505,7 @@ export default function WebappLayout({
                   </div>
                 )}
               </WCard>
+              </div>
             </div>
           )}
 
@@ -1394,7 +1557,13 @@ export default function WebappLayout({
                   </div>
 
                   {/* KPI summary row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(220px, 1fr))', gap: isMobile ? '12px' : '20px' }}>
+                  <div data-tutorial="kpi-results" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: isMobile ? '12px' : '20px' }}>
+                    <KpiCard
+                      label="Totaal Functies"
+                      value={state.totalFunctions}
+                      unit="eenheden"
+                      accent={DMI.blueTint1}
+                    />
                     <KpiCard
                       label="Totale Lengte"
                       value={Math.round(state.results.totalSpaceM2 * 10) / 10}
@@ -1434,6 +1603,7 @@ export default function WebappLayout({
                   </div>
 
                   {/* Ruimte per Cluster section */}
+                  <div data-tutorial="result-charts">
                   <WCard title="Ruimte per Cluster">
                     <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: '24px' }}>
                       {/* Left: Horizontal bar chart */}
@@ -1507,6 +1677,7 @@ export default function WebappLayout({
                       </div>
                     </div>
                   </WCard>
+                  </div>
 
                   {/* Voertuiganalyse section */}
                   <div style={{ display: 'grid', gridTemplateColumns: isCompact ? '1fr' : '1fr 1fr', gap: '24px' }}>
@@ -1863,6 +2034,7 @@ export default function WebappLayout({
           )}
         </main>
       </div>
+      <TutorialOverlay tutorial={tutorial} onGoToCasus={() => { setActiveTab('handleiding'); setHandleidingSubTab('casus'); }} />
     </TooltipProvider>
   );
 }

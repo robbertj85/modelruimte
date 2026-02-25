@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
 import { VEHICLES, LOADING_BAY_WIDTH_M } from '@/lib/model-data';
@@ -9,11 +9,16 @@ import { Loader2, Play } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import LayoutSwitcher from '@/components/LayoutSwitcher';
 import FeedbackButton from '@/components/FeedbackButton';
+import ExportReportButton from '@/components/ExportReportButton';
 import { useIsMobile } from '@/lib/useIsMobile';
+import type { ReportInput } from '@/lib/report-export';
 import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
+import type { TutorialState } from '@/lib/use-tutorial';
+import TutorialOverlay from '@/components/TutorialOverlay';
+import { GraduationCap } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Rebel Color Scheme
@@ -213,10 +218,12 @@ export default function RebelExcelLayout({
   state,
   layout,
   onLayoutChange,
+  tutorial,
 }: {
   state: SimulationState;
   layout: LayoutType;
   onLayoutChange: (layout: LayoutType) => void;
+  tutorial: TutorialState;
 }) {
   const {
     functionCounts,
@@ -237,11 +244,41 @@ export default function RebelExcelLayout({
     setNumSimulations,
   } = state;
 
-  const [activeTab, setActiveTab] = useState<TabId>('cockpit');
+  const [activeTab, setActiveTab] = useState<TabId>('cover');
   const [handleidingSubTab, setHandleidingSubTab] = useState<'handleiding' | 'casus'>('handleiding');
   const [selectedFunction, setSelectedFunction] = useState<string | null>('algemeen');
   const [extendedSim, setExtendedSim] = useState(false);
   const { isMobile, isCompact } = useIsMobile();
+
+  // Tutorial: auto-switch tab when step changes
+  useEffect(() => {
+    if (!tutorial.isActive) return;
+    const nav = tutorial.currentStep.navigateTo.rebel;
+    if (nav && nav !== activeTab) {
+      setActiveTab(nav as TabId);
+    }
+  }, [tutorial.isActive, tutorial.currentStep, tutorial.currentStepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tutorial: auto-run simulation at run-simulation step
+  useEffect(() => {
+    if (!tutorial.isActive || tutorial.currentStep.id !== 'run-simulation') return;
+    if (state.totalFunctions === 0) state.resetToGerardDoustraat();
+    if (!results && !isRunning) {
+      const t = setTimeout(() => handleRun(), 200);
+      return () => clearTimeout(t);
+    }
+  }, [tutorial.isActive, tutorial.currentStep.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tutorial: auto-expand first cluster at result-charts step
+  useEffect(() => {
+    if (!tutorial.isActive || tutorial.currentStep.id !== 'result-charts') return;
+    if (results && clusterIds.length > 0) {
+      const firstCluster = clusterIds[0];
+      if (!expandedClusters[firstCluster]) {
+        toggleCluster(firstCluster);
+      }
+    }
+  }, [tutorial.isActive, tutorial.currentStep.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Derived data for charts ---
 
@@ -487,25 +524,51 @@ export default function RebelExcelLayout({
     return (
       <div style={{ padding: '30px', maxWidth: '800px', margin: '0 auto' }}>
         <ExcelPanel title="Handleiding Rekentool Ruimte voor Stadslogistiek">
-          {/* Sub-toggle: Handleiding / Casus */}
+          {/* Sub-toggle: Uitleg / Interactieve Tutorial / Casus */}
           <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', backgroundColor: '#f5f5f5', borderRadius: '4px', padding: '3px', width: 'fit-content' }}>
-            {([['handleiding', 'Uitleg'], ['casus', 'Casus Gerard Doustraat']] as const).map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => setHandleidingSubTab(id)}
-                style={{
-                  padding: '5px 14px', borderRadius: '3px', border: 'none', cursor: 'pointer',
-                  fontSize: '0.8rem', fontFamily: 'Calibri, Arial, sans-serif',
-                  fontWeight: handleidingSubTab === id ? 700 : 400,
-                  backgroundColor: handleidingSubTab === id ? REBEL.white : 'transparent',
-                  color: handleidingSubTab === id ? REBEL.coral : REBEL.tabInactive,
-                  boxShadow: handleidingSubTab === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {label}
-              </button>
-            ))}
+            <button
+              onClick={() => setHandleidingSubTab('handleiding')}
+              style={{
+                padding: '5px 14px', borderRadius: '3px', border: 'none', cursor: 'pointer',
+                fontSize: '0.8rem', fontFamily: 'Calibri, Arial, sans-serif',
+                fontWeight: handleidingSubTab === 'handleiding' ? 700 : 400,
+                backgroundColor: handleidingSubTab === 'handleiding' ? REBEL.white : 'transparent',
+                color: handleidingSubTab === 'handleiding' ? REBEL.coral : REBEL.tabInactive,
+                boxShadow: handleidingSubTab === 'handleiding' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Uitleg
+            </button>
+            <button
+              onClick={tutorial.start}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '5px 14px', borderRadius: '3px', border: 'none', cursor: 'pointer',
+                fontSize: '0.8rem', fontFamily: 'Calibri, Arial, sans-serif',
+                fontWeight: 600,
+                backgroundColor: `${REBEL.coral}20`,
+                color: REBEL.textDark,
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <GraduationCap size={14} />
+              Interactieve Tutorial
+            </button>
+            <button
+              onClick={() => setHandleidingSubTab('casus')}
+              style={{
+                padding: '5px 14px', borderRadius: '3px', border: 'none', cursor: 'pointer',
+                fontSize: '0.8rem', fontFamily: 'Calibri, Arial, sans-serif',
+                fontWeight: handleidingSubTab === 'casus' ? 700 : 400,
+                backgroundColor: handleidingSubTab === 'casus' ? REBEL.white : 'transparent',
+                color: handleidingSubTab === 'casus' ? REBEL.coral : REBEL.tabInactive,
+                boxShadow: handleidingSubTab === 'casus' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              Casus Gerard Doustraat
+            </button>
           </div>
 
           {handleidingSubTab === 'handleiding' && (
@@ -748,6 +811,7 @@ export default function RebelExcelLayout({
 
         {/* KPI row */}
         <div
+          data-tutorial="kpi-results"
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isCompact ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
@@ -792,6 +856,7 @@ export default function RebelExcelLayout({
           }}
         >
           {/* Panel 1: Inventarisatie Functies with pie chart */}
+          <div data-tutorial="function-inputs">
           <ExcelPanel title="Inventarisatie Functies">
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px' }}>
               {/* Left: function inputs */}
@@ -1085,8 +1150,10 @@ export default function RebelExcelLayout({
               <EmptyState message="Voer eerst de simulatie uit om clusterdata te zien" />
             )}
           </ExcelPanel>
+          </div>
 
           {/* Panel 2: Service Levels & Clustering */}
+          <div data-tutorial="service-levels">
           <ExcelPanel title="Service Levels & Clustering">
             <div
               style={{
@@ -1131,7 +1198,10 @@ export default function RebelExcelLayout({
             </div>
           </ExcelPanel>
 
+          </div>
+
           {/* Panel 3: Bepaling Clusters & Service Level */}
+          <div data-tutorial="cluster-matrix">
           <ExcelPanel title="Bepaling Clusters & Service Level">
             {/* Cluster checkbox matrix */}
             <div style={{ overflowX: 'auto' }}>
@@ -1302,7 +1372,7 @@ export default function RebelExcelLayout({
             </div>
 
             {/* Simulation count + Run button */}
-            <div style={{ marginTop: '10px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '12px' }}>
+            <div data-tutorial="run-simulation" style={{ marginTop: '10px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'flex-end', gap: '12px' }}>
               <div style={{ flex: 1 }}>
                 <p
                   style={{
@@ -1386,10 +1456,12 @@ export default function RebelExcelLayout({
               </div>
             )}
           </ExcelPanel>
+          </div>
         </div>
 
         {/* Row 3: Details per Cluster */}
         {results && (
+          <div data-tutorial="result-charts">
           <ExcelPanel title="Details per Cluster">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
             {results.clusterResults.map((cr) => {
@@ -1695,6 +1767,7 @@ export default function RebelExcelLayout({
             })}
             </div>
           </ExcelPanel>
+          </div>
         )}
 
         {/* Row 4: Details per Voertuig */}
@@ -1852,6 +1925,7 @@ export default function RebelExcelLayout({
         {/* Reset buttons */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
           <button
+            data-tutorial="preset-gerard"
             onClick={state.resetToGerardDoustraat}
             style={{
               padding: '6px 14px', border: `1px solid ${REBEL.border}`,
@@ -2109,6 +2183,7 @@ export default function RebelExcelLayout({
 
       {/* Bottom tab bar - sticky */}
       <div
+        data-tutorial="nav-tabs"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -2156,6 +2231,22 @@ export default function RebelExcelLayout({
         })}
         {/* Filler space after tabs */}
         <div style={{ flex: 1 }} />
+        {/* Export button (only when results available) */}
+        {state.results && (
+          <ExportReportButton
+            variant="rebel"
+            reportInput={{
+              functionCounts: state.functionCounts,
+              clusterAssignments: state.clusterAssignments,
+              clusterServiceLevels: state.clusterServiceLevels,
+              clusterNames: state.clusterNames,
+              numSimulations: state.numSimulations,
+              results: state.results,
+              allFunctions: state.allFunctions,
+              allVehicles: state.allVehicles,
+            } as ReportInput}
+          />
+        )}
         {/* Feedback button */}
         <FeedbackButton variant="rebel" />
         {/* Rebel branding in tab bar */}
@@ -2184,6 +2275,8 @@ export default function RebelExcelLayout({
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      <TutorialOverlay tutorial={tutorial} onGoToCasus={() => { setActiveTab('handleiding'); setHandleidingSubTab('casus'); }} />
     </div>
   );
 }
