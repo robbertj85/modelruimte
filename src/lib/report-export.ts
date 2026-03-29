@@ -60,7 +60,7 @@ export function generateReportMarkdown(input: ReportInput): string {
   const activeFunctions = allFunctions.filter((f) => (functionCounts[f.id] ?? 0) > 0);
 
   const L: string[] = [];
-  L.push('# Rapport Rekentool Ruimte voor Stadslogistiek', '', `**Datum:** ${dateStr}`, `**Aantal simulaties:** ${numSimulations}`, '', '---', '');
+  L.push('# Rapport Ruimtemodel Stadslogistiek', '', `**Datum:** ${dateStr}`, `**Aantal simulaties:** ${numSimulations}`, '', '---', '');
   L.push('## Samenvatting', '', '| Kengetal | Waarde |', '| --- | --- |');
   L.push(`| Totaal functies | ${activeFunctions.reduce((s, f) => s + (functionCounts[f.id] ?? 0), 0)} |`);
   L.push(`| Verwacht aantal voertuigen/dag | ${Math.round(totalVehiclesPerDay)} |`);
@@ -88,13 +88,13 @@ export function generateReportMarkdown(input: ReportInput): string {
   for (const p of results.peakByPeriod) L.push(`| ${p.period} | ${round1(p.space)} m |`);
   L.push('', '---', '', '## Beperkingen en Aandachtspunten', '', getLimitationsMarkdown(), '');
   L.push('---', '', '## Beoogd Gebruik', '');
-  L.push('De Rekentool Ruimte voor Stadslogistiek kan zelfstandig worden gebruikt door gemeenten, stedenbouwkundigen en vastgoedontwikkelaars. Het model biedt een eerste, onderbouwde inschatting van de ruimtevraag van stadslogistiek op gebiedsniveau. Voor een optimale toepassing adviseren wij om de resultaten te bespreken met logistiek experts of ruimtelijk adviseurs, zodat de uitkomsten goed kunnen worden vertaald naar de lokale context.', '');
+  L.push('Het Ruimtemodel Stadslogistiek kan zelfstandig worden gebruikt door gemeenten, stedenbouwkundigen en vastgoedontwikkelaars. Het model biedt een eerste, onderbouwde inschatting van de ruimtevraag van stadslogistiek op gebiedsniveau. Voor een optimale toepassing adviseren wij om de resultaten te bespreken met logistiek experts of ruimtelijk adviseurs, zodat de uitkomsten goed kunnen worden vertaald naar de lokale context.', '');
   L.push('Het model kan worden ingezet bij zowel herinrichtingsprojecten (bestaande situatie) als bij nieuwe gebiedsontwikkelingen. De output vormt een basis voor het opstellen van ruimtelijke scenario\'s, het onderbouwen van beleidsadvies, en het faciliteren van een geïnformeerd gesprek tussen stedenbouwkundigen, beleidsadviseurs, vastgoedontwikkelaars en logistiek adviseurs.', '');
   L.push('De modelresultaten zijn uitdrukkelijk **geen definitief ontwerp**. Een ruimtelijke vertaling — rekening houdend met het straatprofiel, de inrichting, en lokale omstandigheden — is altijd noodzakelijk. Het wordt aanbevolen om de resultaten te valideren met lokale kennis en veldonderzoek.', '');
   L.push('---', '', '## Disclaimer', '');
-  L.push('De resultaten van de Rekentool Ruimte voor Stadslogistiek zijn indicatief en dienen met zorg te worden geïnterpreteerd. Het model levert inschattingen op basis van generieke aannames en vereenvoudigingen van de werkelijkheid. De uitkomsten zijn geen definitieve ontwerpen en geen vervanging voor professioneel advies of veldonderzoek.', '');
+  L.push('De resultaten van het Ruimtemodel Stadslogistiek zijn indicatief en dienen met zorg te worden geïnterpreteerd. Het model levert inschattingen op basis van generieke aannames en vereenvoudigingen van de werkelijkheid. De uitkomsten zijn geen definitieve ontwerpen en geen vervanging voor professioneel advies of veldonderzoek.', '');
   L.push('Aan de resultaten van dit model kunnen **geen rechten worden ontleend**. De ontwikkelaars en samenwerkingspartners aanvaarden **geen aansprakelijkheid** voor eventuele schade of onjuistheden die voortvloeien uit het gebruik van de resultaten van dit model. Gebruik van de tool geschiedt geheel op eigen risico.', '');
-  L.push('---', '', '*Gegenereerd met de Rekentool Ruimte voor Stadslogistiek — een open source tool (EUPL-1.2) gerealiseerd door Rebel Group, in samenwerking met HAN, Breda University of Applied Sciences en Posad Maxwan, mede-gerealiseerd vanuit het DMI Ecosysteem.*', '');
+  L.push('---', '', '*Gegenereerd met het Ruimtemodel Stadslogistiek — een open source tool (EUPL-1.2) gerealiseerd door Rebel Group, in samenwerking met HAN, Breda University of Applied Sciences en Posad Maxwan, mede-gerealiseerd vanuit het DMI Ecosysteem.*', '');
   return L.join('\n');
 }
 
@@ -254,7 +254,7 @@ export function downloadPdf(input: ReportInput, filename = 'rapport-ruimtemodel'
   <!-- Header with DMI logo -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:3px solid ${DMI.darkBlue};">
     <div>
-      <h1>Rapport Rekentool Ruimte voor Stadslogistiek</h1>
+      <h1>Rapport Ruimtemodel Stadslogistiek</h1>
       <div style="font-size:0.8rem;color:${DMI.darkGray};margin-top:4px;">
         <strong>Datum:</strong> ${dateStr} &nbsp;&nbsp; <strong>Simulaties:</strong> ${numSimulations}
       </div>
@@ -366,7 +366,7 @@ export function downloadPdf(input: ReportInput, filename = 'rapport-ruimtemodel'
 
   <!-- Intended use -->
   <h2>Beoogd Gebruik</h2>
-  <p style="font-size:0.85rem;line-height:1.5;">De Rekentool Ruimte voor Stadslogistiek kan zelfstandig worden gebruikt door gemeenten, stedenbouwkundigen en vastgoedontwikkelaars. Het model biedt een eerste, onderbouwde inschatting van de ruimtevraag van stadslogistiek op gebiedsniveau. Voor een optimale toepassing adviseren wij om de resultaten te bespreken met logistiek experts of ruimtelijk adviseurs, zodat de uitkomsten goed kunnen worden vertaald naar de lokale context.</p>
+  <p style="font-size:0.85rem;line-height:1.5;">Het Ruimtemodel Stadslogistiek kan zelfstandig worden gebruikt door gemeenten, stedenbouwkundigen en vastgoedontwikkelaars. Het model biedt een eerste, onderbouwde inschatting van de ruimtevraag van stadslogistiek op gebiedsniveau. Voor een optimale toepassing adviseren wij om de resultaten te bespreken met logistiek experts of ruimtelijk adviseurs, zodat de uitkomsten goed kunnen worden vertaald naar de lokale context.</p>
   <p style="font-size:0.85rem;line-height:1.5;">Het model kan worden ingezet bij zowel herinrichtingsprojecten (bestaande situatie) als bij nieuwe gebiedsontwikkelingen. De output vormt een basis voor het opstellen van ruimtelijke scenario's, het onderbouwen van beleidsadvies, en het faciliteren van een geïnformeerd gesprek tussen stedenbouwkundigen, beleidsadviseurs, vastgoedontwikkelaars en logistiek adviseurs.</p>
   <p style="font-size:0.85rem;line-height:1.5;">De modelresultaten zijn uitdrukkelijk <strong>geen definitief ontwerp</strong>. Een ruimtelijke vertaling — rekening houdend met het straatprofiel, de inrichting, en lokale omstandigheden — is altijd noodzakelijk. Het wordt aanbevolen om de resultaten te valideren met lokale kennis en veldonderzoek.</p>
 
@@ -374,12 +374,12 @@ export function downloadPdf(input: ReportInput, filename = 'rapport-ruimtemodel'
 
   <!-- Disclaimer -->
   <h2>Disclaimer</h2>
-  <p style="font-size:0.85rem;line-height:1.5;">De resultaten van de Rekentool Ruimte voor Stadslogistiek zijn indicatief en dienen met zorg te worden geïnterpreteerd. Het model levert inschattingen op basis van generieke aannames en vereenvoudigingen van de werkelijkheid. De uitkomsten zijn geen definitieve ontwerpen en geen vervanging voor professioneel advies of veldonderzoek.</p>
+  <p style="font-size:0.85rem;line-height:1.5;">De resultaten van het Ruimtemodel Stadslogistiek zijn indicatief en dienen met zorg te worden geïnterpreteerd. Het model levert inschattingen op basis van generieke aannames en vereenvoudigingen van de werkelijkheid. De uitkomsten zijn geen definitieve ontwerpen en geen vervanging voor professioneel advies of veldonderzoek.</p>
   <p style="font-size:0.85rem;line-height:1.5;">Aan de resultaten van dit model kunnen <strong>geen rechten worden ontleend</strong>. De ontwikkelaars en samenwerkingspartners aanvaarden <strong>geen aansprakelijkheid</strong> voor eventuele schade of onjuistheden die voortvloeien uit het gebruik van de resultaten van dit model. Gebruik van de tool geschiedt geheel op eigen risico.</p>
 
   <hr>
 
-  <p class="footer">Gegenereerd met de Rekentool Ruimte voor Stadslogistiek — een open source tool (EUPL-1.2) gerealiseerd door Rebel Group, in samenwerking met HAN, Breda University of Applied Sciences en Posad Maxwan, mede-gerealiseerd vanuit het DMI Ecosysteem.</p>
+  <p class="footer">Gegenereerd met het Ruimtemodel Stadslogistiek — een open source tool (EUPL-1.2) gerealiseerd door Rebel Group, in samenwerking met HAN, Breda University of Applied Sciences en Posad Maxwan, mede-gerealiseerd vanuit het DMI Ecosysteem.</p>
 
 </body>
 </html>`;

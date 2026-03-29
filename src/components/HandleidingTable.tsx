@@ -2,17 +2,9 @@
 
 import type { HandleidingTable } from '@/lib/content';
 
-export type TableTheme = 'rebel' | 'dmi';
+export type TableTheme = 'dmi';
 
 const THEMES = {
-  rebel: {
-    headerBg: '#c0504d',
-    headerColor: '#ffffff',
-    borderColor: '#e0e0e0',
-    stripeBg: '#faf5f5',
-    captionColor: '#666666',
-    font: 'Calibri, Arial, sans-serif',
-  },
   dmi: {
     headerBg: '#0a3660',
     headerColor: '#ffffff',

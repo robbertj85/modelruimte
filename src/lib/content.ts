@@ -109,12 +109,12 @@ export const CONTACT = {
 // Cover page data
 // ---------------------------------------------------------------------------
 export const COVER = {
-  title: 'Rekentool Ruimte voor Stadslogistiek',
+  title: 'Ruimtemodel Stadslogistiek',
   subtitle: '',
   description:
     'Stadslogistiek — alle leveringen, ophalingen en diensten in de stad — zorgt voor een steeds toenemende druk op de beperkte stedelijke ruimte.',
   paragraphs: [
-    'Om stedenbouwkundigen, beleidsadviseurs en vastgoedontwikkelaars een beter inzicht te geven in het ruimtebeslag van deze logistieke activiteiten, is de Rekentool Ruimte voor Stadslogistiek ontwikkeld. Dit is een eerste prototype van een model dat de ruimtevraag van stadslogistieke voertuigen in beeld brengt, met onderscheid in type voertuigen en tijdsvensters.',
+    'Om stedenbouwkundigen, beleidsadviseurs en vastgoedontwikkelaars een beter inzicht te geven in het ruimtebeslag van deze logistieke activiteiten, is het Ruimtemodel Stadslogistiek ontwikkeld. Dit is een eerste prototype van een model dat de ruimtevraag van stadslogistieke voertuigen in beeld brengt, met onderscheid in type voertuigen en tijdsvensters.',
   ],
   license: {
     label: 'LICENTIE',
@@ -130,7 +130,7 @@ export const HANDLEIDING_SECTIONS: HandleidingSection[] = [
   {
     title: '1. Algemeen',
     paragraphs: [
-      'De Rekentool Ruimte voor Stadslogistiek is een simulatietool dat de benodigde laad- en losruimte berekent voor stedelijke gebiedsontwikkelingen. Het model werkt op basis van Monte Carlo-simulatie: het genereert duizenden willekeurige scenario\'s van voertuigaankomsten en bepaalt daaruit de piekbelasting. De **cockpit** fungeert als het centrale punt van het model: hier vult u de inputs in, voert u simulaties uit en bekijkt u de resultaten.',
+      'Het Ruimtemodel Stadslogistiek is een simulatietool dat de benodigde laad- en losruimte berekent voor stedelijke gebiedsontwikkelingen. Het model werkt op basis van Monte Carlo-simulatie: het genereert duizenden willekeurige scenario\'s van voertuigaankomsten en bepaalt daaruit de piekbelasting. De **spreadsheet** fungeert als het centrale punt van het model: hier vult u de inputs in, voert u simulaties uit en bekijkt u de resultaten.',
       'Bij het invullen of wijzigen van inputs is altijd een **nieuwe simulatie** nodig om de ruimtebehoefte te berekenen \u2014 dit gebeurt niet automatisch. Gebruik de knop **"Run Simulaties"**. Vanaf ongeveer 100 tot 200 simulaties levert het model betrouwbare resultaten; meer simulaties (max. 1000) geeft nauwkeurigere berekeningen maar duurt langer.',
       'De **beleveringsprofielen** voor de functies zijn terug te vinden via het tabblad "Inputs". Deze profielen bevatten informatie over het gemiddeld aantal stops per week en de gemiddelde stoptijd per functie. Ze zijn generiek ingevuld op basis van eerder onderzoek (o.a. Outlooks Stadslogistiek van TNO) en kunnen als standaard worden gebruikt, maar ook aangepast worden aan de specifieke situatie.',
       'De uitkomst is de **benodigde lengte (in meters)** laad- en losruimte die nodig is om een bepaald service level te garanderen. Het is belangrijk om te beseffen dat de resultaten inschattingen zijn van het aantal stops en ruimtegebruik en een eerste aanzet om meer grip te krijgen op de ruimtevraag van logistieke voertuigen. De resultaten kunnen afwijken van de werkelijke situatie (die ook dagelijks zal fluctueren).',
@@ -209,7 +209,7 @@ export const HANDLEIDING_SECTIONS: HandleidingSection[] = [
         rows: [
           ['Cluster 1', 'Fiets, cargobike, scooter, LEVV\'s', 'Kleine voertuigen die typisch geen L&L-plek gebruiken.'],
           ['Cluster 2', 'Bestelwagens, vrachtwagens (N2, N3)', 'Maken meestal gebruik van een L&L-plek.'],
-          ['Cluster 3', 'Service bestelwagens', 'Staan vaak langer stil en moeten een parkeerplek zoeken. De rekentool berekent het nodige aantal parkeerplekken apart.'],
+          ['Cluster 3', 'Service bestelwagens', 'Staan vaak langer stil en moeten een parkeerplek zoeken. Het model berekent het nodige aantal parkeerplekken apart.'],
         ],
       },
       {
@@ -227,21 +227,21 @@ export const HANDLEIDING_SECTIONS: HandleidingSection[] = [
     diagrams: ['cluster-allocation-animation', 'cluster-service-level', 'time-periods'],
   },
   {
-    title: '5. Werking Rekentool',
+    title: '5. Werking van het model',
     paragraphs: [
       'Het model doorloopt **vijf opeenvolgende stappen** om tot een inschatting van de benodigde laad- en losruimte in een gebied te komen. De belangrijkste input is het aantal en type functies in een gebied. Deze worden gecombineerd met het aantal stops van verschillende type voertuigen (cargofietsen, bestelwagens, vrachtwagens, ...) binnen het gebied, de duur van een stop van de simulatie en onderverdeeld in dagdelen, uitgedrukt in intervallen van 10 minuten.',
-      '**Stap 1 \u2014 Berekenen aantal stops per functie:** De gebruiker geeft per stedelijke functie (bv. woningen, supermarkt, hotel, ...) het **aantal eenheden** in. Deze inputs bevinden zich in de **cockpit** van het model. Op basis van elk van deze functies, berekent het model het aantal stops per voertuigtype op basis van empirische data (o.a. Outlooks Stadslogistiek van TNO). Het resultaat van stap 1 is per functietype een aantal stops opgesplitst naar type logistiek (bv. 8:00-12:00 of 12:00-18:00).',
+      '**Stap 1 \u2014 Berekenen aantal stops per functie:** De gebruiker geeft per stedelijke functie (bv. woningen, supermarkt, hotel, ...) het **aantal eenheden** in. Deze inputs bevinden zich in de **spreadsheet** van het model. Op basis van elk van deze functies, berekent het model het aantal stops per voertuigtype op basis van empirische data (o.a. Outlooks Stadslogistiek van TNO). Het resultaat van stap 1 is per functietype een aantal stops opgesplitst naar type logistiek (bv. 8:00-12:00 of 12:00-18:00).',
       '**Stap 2 \u2014 Kansverdeling per voertuigtype:** In een volgende stap berekent het model de **kans op een stop per voertuigtype per periode per 10 minuten interval**. Dit geeft de kansverdeling voor voertuigen en verdeling op tijdsbasis weer, uitgedrukt als kans per interval. Deze kansverdeling wordt vervolgens gebruikt om in stap 3 de simulatie uit te voeren.',
       '**Stap 3 \u2014 Simulatie van boeking en bezetting:** Met Monte Carlo-simulatie worden een groot aantal scenario\'s gegenereerd. In elk scenario worden per interval willekeurig voertuigen gegenereerd op basis van de kansverdelingen. Elk voertuig heeft een vaste stopduur en bezet gedurende die tijd een laad-/losplek. Per simulatie wordt de **piekbelasting** bepaald \u2014 het maximaal gelijktijdig aanwezige aantal voertuigen.',
       '**Stap 4 \u2014 Bepalen van piek-overeenkomsten op basis van het service level:** Op basis van alle simulaties wordt per cluster en per voertuigtype een percentielanalyse uitgevoerd. Bij een service level van 95% wordt het 95e percentiel van de pieken genomen als benodigde capaciteit. De benodigde lengte per voertuigtype wordt berekend door het aantal piekvoertuigen te vermenigvuldigen met de voertuiglengte.',
-      '**Stap 5 \u2014 Resultaten:** De benodigde lengte per voertuigtype wordt opgeteld per cluster en over alle clusters heen tot het totale ruimtebeslag. De resultaten worden gepresenteerd in grafieken en tabellen in de cockpit.',
+      '**Stap 5 \u2014 Resultaten:** De benodigde lengte per voertuigtype wordt opgeteld per cluster en over alle clusters heen tot het totale ruimtebeslag. De resultaten worden gepresenteerd in grafieken en tabellen in de spreadsheet.',
     ],
     diagrams: ['simulation-process'],
   },
   {
     title: '6. Beoogd Gebruik',
     paragraphs: [
-      'De Rekentool Ruimte voor Stadslogistiek kan zelfstandig worden gebruikt door gemeenten, stedenbouwkundigen en vastgoedontwikkelaars. Het model biedt een eerste, onderbouwde inschatting van de ruimtevraag van stadslogistiek op gebiedsniveau. Voor een optimale toepassing adviseren wij om de resultaten te bespreken met logistiek experts of ruimtelijk adviseurs, zodat de uitkomsten goed kunnen worden vertaald naar de lokale context.',
+      'Het Ruimtemodel Stadslogistiek kan zelfstandig worden gebruikt door gemeenten, stedenbouwkundigen en vastgoedontwikkelaars. Het model biedt een eerste, onderbouwde inschatting van de ruimtevraag van stadslogistiek op gebiedsniveau. Voor een optimale toepassing adviseren wij om de resultaten te bespreken met logistiek experts of ruimtelijk adviseurs, zodat de uitkomsten goed kunnen worden vertaald naar de lokale context.',
       'Het model kan worden ingezet bij zowel **herinrichtingsprojecten** (bestaande situatie) als bij **nieuwe gebiedsontwikkelingen**. De output vormt een basis voor het opstellen van ruimtelijke scenario\'s, het onderbouwen van beleidsadvies, en het faciliteren van een geïnformeerd gesprek tussen stedenbouwkundigen, beleidsadviseurs, vastgoedontwikkelaars en logistiek adviseurs.',
       'De modelresultaten zijn uitdrukkelijk **geen definitief ontwerp**. Een ruimtelijke vertaling — rekening houdend met het straatprofiel, de inrichting, en lokale omstandigheden — is altijd noodzakelijk. Het wordt aanbevolen om de resultaten te valideren met lokale kennis en veldonderzoek.',
     ],
@@ -249,7 +249,7 @@ export const HANDLEIDING_SECTIONS: HandleidingSection[] = [
   {
     title: '7. Beperkingen en aandachtspunten',
     paragraphs: [
-      'De Rekentool Ruimte voor Stadslogistiek is een **eerste prototype**. De resultaten zijn inschattingen en vormen een eerste aanzet om meer grip te krijgen op de ruimtevraag van logistieke voertuigen. Hieronder staan de belangrijkste beperkingen en aandachtspunten bij het gebruik van het model.',
+      'Het Ruimtemodel Stadslogistiek is een **eerste prototype**. De resultaten zijn inschattingen en vormen een eerste aanzet om meer grip te krijgen op de ruimtevraag van logistieke voertuigen. Hieronder staan de belangrijkste beperkingen en aandachtspunten bij het gebruik van het model.',
       '**Beperkt aantal functies:** Het model bevat 12 stedelijke functies. Socio-maatschappelijke voorzieningen (scholen, sportfaciliteiten, zorginstellingen) ontbreken nog en kunnen als workaround worden toebedeeld aan kantoor klein, middel of groot.',
       '**Geen detailniveau binnen functies:** Er wordt geen onderscheid gemaakt naar omvang of type binnen een functie (bv. AH to go vs. AH XL, of een klein hotel vs. een groot hotel). Het model werkt met gemiddelden in de beleveringsprofielen.',
       '**Onvolledige logistieke stromen:** Het model houdt nog geen rekening met alle typen logistieke activiteiten. Afvalophaling, bouwverkeer, verhuizingen en maaltijdbezorgingen zijn nog niet opgenomen. De berekende ruimtevraag is daarom een **ondergrens**.',
@@ -291,9 +291,9 @@ export const CASUS_GERARD_DOUSTRAAT: {
   sections: CasusSection[];
 } = {
   title: 'Casus Gerard Doustraat',
-  subtitle: 'Toepassing Rekentool Ruimte voor Stadslogistiek',
+  subtitle: 'Toepassing Ruimtemodel Stadslogistiek',
   intro:
-    'Om te laten zien hoe de rekentool werkt en op welke manieren deze kan worden toegepast, is een casus uitgewerkt. In dit hoofdstuk wordt getoond hoe de rekentool is ingezet, welke output dit oplevert en hoe deze resultaten kunnen worden gebruikt in een stedenbouwkundige context en als basis voor het gesprek.',
+    'Om te laten zien hoe het model werkt en op welke manieren het kan worden toegepast, is een casus uitgewerkt. In dit hoofdstuk wordt getoond hoe het Ruimtemodel is ingezet, welke output dit oplevert en hoe deze resultaten kunnen worden gebruikt in een stedenbouwkundige context en als basis voor het gesprek.',
   sections: [
     {
       title: 'Het projectgebied',
@@ -322,7 +322,7 @@ export const CASUS_GERARD_DOUSTRAAT: {
     {
       title: 'Invoer in het model',
       paragraphs: [
-        'Binnen het studiegebied bevinden zich 415 functionele units, waarvan 52 niet-wonen. Deze functieverdeling is gebruikt als input voor de rekentool:',
+        'Binnen het studiegebied bevinden zich 415 functionele units, waarvan 52 niet-wonen. Deze functieverdeling is gebruikt als input voor het model:',
         'Voor de clustering is in deze casus gekozen voor drie clusters (de standaard indeling): cluster 1 (fiets/cargobike en LEVV/personenwagens), cluster 2 (bestel- en vrachtwagens) en cluster 3 (service bestelwagens). Deze indeling is aanpasbaar — de gebruiker kan zelf bepalen welke voertuigtypen per cluster worden gegroepeerd. Het service level is voor alle clusters op 95% gezet, vanwege de smalle straten en weinig uitwijkmogelijkheden.',
       ],
       tables: [
@@ -359,26 +359,26 @@ export const CASUS_GERARD_DOUSTRAAT: {
       ],
       images: [
         { src: '/casus/resultaten-clusters.png', alt: 'Benodigde ruimte per cluster', caption: 'Resultaten berekening: benodigde ruimte per cluster. Totaal: 77 strekkende meter.' },
-        { src: '/casus/ruimtelijke-vertaling.png', alt: 'Rekentool en output stap 2', caption: 'Stap 2: Rekentool output met verwachte voertuigen, clustering en benodigde ruimte. Bron: D5 rapport.' },
+        { src: '/casus/ruimtelijke-vertaling.png', alt: 'Model output stap 2', caption: 'Stap 2: output met verwachte voertuigen, clustering en benodigde ruimte. Bron: D5 rapport.' },
       ],
     },
     {
       title: 'Vergelijking met de huidige situatie',
       paragraphs: [
-        'De uitkomst van de rekentool\u201413 laad- en losplekken\u2014ligt circa vier plekken lager dan de bestaande situatie (17 plekken, 91 meter). Vanuit stedenbouwkundig perspectief is dit een positieve uitkomst: minder ruimte voor laden en lossen betekent potentieel meer ruimte voor andere ruimtelijke claims die de kwaliteit van de openbare ruimte kunnen verhogen, zoals vergroening, terrassen of fietsparkeren.',
-        'De herinrichtingsplannen voorzien in totaal 13 parkeerplekken voor laden en lossen, waarvan 5 plekken geschikt zijn voor bestelwagens en 3 gecombineerde zones \u2018laden en lossen \u2013 fietsvak\u2019, samen goed voor 8 parkeerplekken. Dit komt goed overeen met de uitkomsten van de rekentool.',
+        'De uitkomst van het model\u201413 laad- en losplekken\u2014ligt circa vier plekken lager dan de bestaande situatie (17 plekken, 91 meter). Vanuit stedenbouwkundig perspectief is dit een positieve uitkomst: minder ruimte voor laden en lossen betekent potentieel meer ruimte voor andere ruimtelijke claims die de kwaliteit van de openbare ruimte kunnen verhogen, zoals vergroening, terrassen of fietsparkeren.',
+        'De herinrichtingsplannen voorzien in totaal 13 parkeerplekken voor laden en lossen, waarvan 5 plekken geschikt zijn voor bestelwagens en 3 gecombineerde zones \u2018laden en lossen \u2013 fietsvak\u2019, samen goed voor 8 parkeerplekken. Dit komt goed overeen met de uitkomsten van het model.',
       ],
       images: [
-        { src: '/casus/ruimtelijke-scenarios.png', alt: 'Totaalbeeld vergelijking bestaande situatie met rekentool', caption: 'Vergelijking bestaande situatie (91m) met rekentool output (77m) en herinrichtingsplan (13 plekken). Bron: D5 rapport.' },
+        { src: '/casus/ruimtelijke-scenarios.png', alt: 'Totaalbeeld vergelijking bestaande situatie met model output', caption: 'Vergelijking bestaande situatie (91m) met model output (77m) en herinrichtingsplan (13 plekken). Bron: D5 rapport.' },
       ],
     },
     {
       title: 'Ruimtelijke scenario\u2019s',
       paragraphs: [
-        'De resultaten van de rekentool vormen een basis voor een dialoog over de ruimtelijke reservering voor logistiek in relatie tot andere ambities in het gebied. Op basis van de output kunnen verschillende scenario\u2019s worden verkend:',
+        'De resultaten van het model vormen een basis voor een dialoog over de ruimtelijke reservering voor logistiek in relatie tot andere ambities in het gebied. Op basis van de output kunnen verschillende scenario\u2019s worden verkend:',
         'A. Verspreiding in de straat \u2014 Alle laad- en loszones blijven, net als in de huidige situatie, verspreid over de straat.',
         'B. Clusteren nabij functies \u2014 Meer clustering van laad- en loszones nabij functies met een hoge logistieke vraag, zoals een langere zone bij winkelstroken en \u00e9\u00e9n zone bij het horecacluster, maar niet direct bij terrassen.',
-        'C. Meer dubbelgebruik van ruimte \u2014 Door inzicht in tijdsvensters van verschillende logistieke stromen biedt de rekentool aanknopingspunten voor dubbelgebruik van ruimte (bv. combinatie laad- en loszones met fietsvakken, of tijdelijk gebruik van een plein voor laden en lossen in de ochtend).',
+        'C. Meer dubbelgebruik van ruimte \u2014 Door inzicht in tijdsvensters van verschillende logistieke stromen biedt het model aanknopingspunten voor dubbelgebruik van ruimte (bv. combinatie laad- en loszones met fietsvakken, of tijdelijk gebruik van een plein voor laden en lossen in de ochtend).',
         'D. Opschalen: oplossing op de schaal van de buurt / wijk \u2014 Verkenning van een ander logistiek systeem, bijvoorbeeld met logistieke hubs in de buurt voor bevoorrading van winkels, horeca en bewoners.',
       ],
       images: [

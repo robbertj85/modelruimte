@@ -15,7 +15,7 @@ import type { LucideIcon } from 'lucide-react';
 // Theme definitions
 // ---------------------------------------------------------------------------
 
-export type DiagramTheme = 'rebel' | 'dmi';
+export type DiagramTheme = 'dmi';
 
 interface ThemeColors {
   /** Primary accent (step boxes, headers) */
@@ -44,24 +44,6 @@ interface ThemeColors {
   periods: [string, string, string, string];
 }
 
-const REBEL_THEME: ThemeColors = {
-  primary: '#c0504d',
-  cat1: '#4bacc6',
-  cat2: '#f79646',
-  cat3: '#9bbb59',
-  cat4: '#8064a2',
-  cat5: '#4f81bd',
-  highlight: '#c0504d',
-  dark: '#2d2d2d',
-  darkText: '#333333',
-  mid: '#666666',
-  light: '#e8e8e8',
-  white: '#ffffff',
-  bg: '#f9f9f9',
-  font: 'Calibri, Arial, sans-serif',
-  periods: ['#4f81bd', '#c0504d', '#f79646', '#9bbb59'],
-};
-
 const DMI_THEME: ThemeColors = {
   primary: '#0a3660',
   cat1: '#115491',
@@ -80,8 +62,8 @@ const DMI_THEME: ThemeColors = {
   periods: ['#a3cdf4', '#115491', '#ffba08', '#ffd493'],
 };
 
-function themeFor(t: DiagramTheme): ThemeColors {
-  return t === 'rebel' ? REBEL_THEME : DMI_THEME;
+function themeFor(_t: DiagramTheme): ThemeColors {
+  return DMI_THEME;
 }
 
 // ---------------------------------------------------------------------------
@@ -248,7 +230,7 @@ function DiagramFunctionsOverview({ theme: t }: { theme: DiagramTheme }) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Simulation Process — section "5. Werking Rekentool"
+// 4. Simulation Process — section "5. Werking van het model"
 // ---------------------------------------------------------------------------
 function DiagramSimulationProcess({ theme: t }: { theme: DiagramTheme }) {
   const c = themeFor(t);

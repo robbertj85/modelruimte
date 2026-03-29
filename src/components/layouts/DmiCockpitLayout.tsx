@@ -21,7 +21,6 @@ import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
 import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
-import LayoutSwitcher from '@/components/LayoutSwitcher';
 import FeedbackButton from '@/components/FeedbackButton';
 import ExportReportButton from '@/components/ExportReportButton';
 import { AlgemeenEditor, DeliveryProfileEditor } from '@/components/ParameterEditor';
@@ -335,7 +334,7 @@ export default function DmiCockpitLayout({
                     lineHeight: 1.2,
                   }}
                 >
-                  Rekentool Ruimte voor Stadslogistiek
+                  Ruimtemodel Stadslogistiek
                 </h1>
                 <p
                   style={{
@@ -345,7 +344,7 @@ export default function DmiCockpitLayout({
                     margin: '4px 0 0 0',
                   }}
                 >
-                  {navMode === 'cockpit' ? 'Cockpit' : navMode === 'cover' ? 'Cover' : navMode === 'parameters' ? 'Parameters' : 'Handleiding'}
+                  {navMode === 'cockpit' ? 'Spreadsheet' : navMode === 'cover' ? 'Cover' : navMode === 'parameters' ? 'Parameters' : 'Handleiding'}
                 </p>
               </div>
               {isMobile && (
@@ -366,7 +365,8 @@ export default function DmiCockpitLayout({
                   key={mode}
                   onClick={() => setNavMode(mode)}
                   style={{
-                    padding: isMobile ? '8px 14px' : '5px 14px',
+                    padding: isMobile ? '10px 14px' : '5px 14px',
+                    minHeight: isMobile ? '44px' : undefined,
                     borderRadius: '4px',
                     border: 'none',
                     cursor: 'pointer',
@@ -380,7 +380,7 @@ export default function DmiCockpitLayout({
                     flexShrink: 0,
                   }}
                 >
-                  {mode}
+                  {mode === 'cockpit' ? 'Spreadsheet' : mode}
                 </button>
               ))}
             </div>
@@ -404,7 +404,6 @@ export default function DmiCockpitLayout({
                 />
               )}
               <FeedbackButton variant="dmi" />
-              <LayoutSwitcher current={layout} onChange={onLayoutChange} />
               <Image
                 src="/dmi-logo-diap.png"
                 alt="DMI Logo"
@@ -416,9 +415,6 @@ export default function DmiCockpitLayout({
             </div>
           )}
         </header>
-        {/* Mobile layout switcher (renders as fixed bottom pill) */}
-        {isMobile && <LayoutSwitcher current={layout} onChange={onLayoutChange} />}
-
         {/* ================================================================
             COVER VIEW
         ================================================================ */}
@@ -532,6 +528,48 @@ export default function DmiCockpitLayout({
                   </p>
                 ))}
               </div>
+
+              {/* Layout toggle */}
+              <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '20px', marginTop: '16px' }}>
+                <p style={{ ...labelMono, marginBottom: '8px' }}>Weergave</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                  <span style={{ ...bodyText, fontSize: '0.8rem', color: layout === 'dmi' ? DMI.darkBlue : DMI.darkGray, fontWeight: layout === 'dmi' ? 600 : 400 }}>
+                    Spreadsheet
+                  </span>
+                  <button
+                    onClick={() => onLayoutChange(layout === 'dmi' ? 'webapp' : 'dmi')}
+                    style={{
+                      position: 'relative',
+                      width: '44px',
+                      height: '24px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      backgroundColor: layout === 'webapp' ? DMI.darkBlue : DMI.blueTint2,
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s ease',
+                      padding: 0,
+                    }}
+                    aria-label="Wissel weergave"
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '2px',
+                        left: layout === 'webapp' ? '22px' : '2px',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ffffff',
+                        transition: 'left 0.2s ease',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                      }}
+                    />
+                  </button>
+                  <span style={{ ...bodyText, fontSize: '0.8rem', color: layout === 'webapp' ? DMI.darkBlue : DMI.darkGray, fontWeight: layout === 'webapp' ? 600 : 400 }}>
+                    Webapp
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -542,7 +580,7 @@ export default function DmiCockpitLayout({
         {navMode === 'handleiding' && (
           <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '860px', margin: '0 auto' }}>
             <h2 style={{ ...heading, fontSize: '1.5rem', marginBottom: '16px' }}>
-              Handleiding Rekentool Ruimte voor Stadslogistiek
+              Handleiding Ruimtemodel Stadslogistiek
             </h2>
 
             {/* Sub-toggle: Uitleg / Interactieve Tutorial / Casus */}
@@ -1705,7 +1743,7 @@ export default function DmiCockpitLayout({
           }}
         >
           <p style={{ ...bodyText, fontSize: '0.7rem', color: DMI.blueTint1 }}>
-            Rekentool Ruimte voor Stadslogistiek &mdash; DMI Ecosysteem
+            Ruimtemodel Stadslogistiek &mdash; DMI Ecosysteem
           </p>
         </footer>
       </div>

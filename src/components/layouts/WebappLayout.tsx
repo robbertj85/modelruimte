@@ -8,7 +8,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen, MapPin, RotateCcw, Settings, FileDown, FileText, Printer } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import LayoutSwitcher from '@/components/LayoutSwitcher';
 import FeedbackButton from '@/components/FeedbackButton';
 import { useIsMobile } from '@/lib/useIsMobile';
 import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
@@ -226,7 +225,7 @@ export default function WebappLayout({
   const tabs: { id: WebappTab; label: string; icon: React.ReactNode }[] = [
     { id: 'cover', label: 'Info', icon: <Info size={18} /> },
     { id: 'handleiding', label: 'Handleiding', icon: <BookOpen size={18} /> },
-    { id: 'dashboard', label: 'Cockpit', icon: <LayoutDashboard size={18} /> },
+    { id: 'dashboard', label: 'Spreadsheet', icon: <LayoutDashboard size={18} /> },
     { id: 'invoer', label: 'Invoer', icon: <ClipboardList size={18} /> },
     { id: 'parameters', label: 'Parameters', icon: <Settings size={18} /> },
     { id: 'clustering', label: 'Clustering', icon: <Network size={18} /> },
@@ -314,7 +313,8 @@ export default function WebappLayout({
                     display: 'flex',
                     alignItems: 'center',
                     gap: isMobile ? '4px' : '8px',
-                    padding: isMobile ? '10px 12px' : '8px 20px',
+                    padding: isMobile ? '12px 14px' : '8px 20px',
+                    minHeight: isMobile ? '44px' : undefined,
                     border: 'none',
                     background: 'none',
                     cursor: 'pointer',
@@ -408,9 +408,12 @@ export default function WebappLayout({
                         display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
                         padding: '10px 14px', border: 'none', cursor: 'pointer', fontSize: '0.8rem',
                         backgroundColor: 'transparent', color: '#334155', textAlign: 'left',
+                        WebkitTapHighlightColor: DMI.blueTint3,
                       }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint3; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                      onTouchStart={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint3; }}
+                      onTouchEnd={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
                     >
                       <FileText size={14} />
                       Export rapport (.md)
@@ -421,9 +424,12 @@ export default function WebappLayout({
                         display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
                         padding: '10px 14px', border: 'none', cursor: 'pointer', fontSize: '0.8rem',
                         backgroundColor: 'transparent', color: '#334155', textAlign: 'left',
+                        WebkitTapHighlightColor: DMI.blueTint3,
                       }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint3; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                      onTouchStart={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = DMI.blueTint3; }}
+                      onTouchEnd={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
                     >
                       <Printer size={14} />
                       Export rapport (.pdf)
@@ -432,13 +438,9 @@ export default function WebappLayout({
                 )}
               </div>
               <FeedbackButton variant="webapp" />
-              <LayoutSwitcher current={layout} onChange={onLayoutChange} />
             </div>
           )}
         </nav>
-        {/* Mobile layout switcher (renders as fixed bottom pill) */}
-        {isMobile && <LayoutSwitcher current={layout} onChange={onLayoutChange} />}
-
         {/* ============================================================ */}
         {/*  MAIN CONTENT AREA                                           */}
         {/* ============================================================ */}
@@ -536,6 +538,48 @@ export default function WebappLayout({
                         {line}
                       </p>
                     ))}
+                  </div>
+
+                  {/* Layout toggle */}
+                  <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '16px', marginTop: '12px' }}>
+                    <p style={{ ...labelMono, marginBottom: '8px' }}>Weergave</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                      <span style={{ ...bodyText, fontSize: '0.8rem', color: layout === 'dmi' ? DMI.darkBlue : DMI.darkGray, fontWeight: layout === 'dmi' ? 600 : 400 }}>
+                        Spreadsheet
+                      </span>
+                      <button
+                        onClick={() => onLayoutChange(layout === 'dmi' ? 'webapp' : 'dmi')}
+                        style={{
+                          position: 'relative',
+                          width: '44px',
+                          height: '24px',
+                          borderRadius: '12px',
+                          border: 'none',
+                          backgroundColor: layout === 'webapp' ? DMI.darkBlue : DMI.blueTint2,
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s ease',
+                          padding: 0,
+                        }}
+                        aria-label="Wissel weergave"
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            top: '2px',
+                            left: layout === 'webapp' ? '22px' : '2px',
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            backgroundColor: '#ffffff',
+                            transition: 'left 0.2s ease',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                          }}
+                        />
+                      </button>
+                      <span style={{ ...bodyText, fontSize: '0.8rem', color: layout === 'webapp' ? DMI.darkBlue : DMI.darkGray, fontWeight: layout === 'webapp' ? 600 : 400 }}>
+                        Webapp
+                      </span>
+                    </div>
                   </div>
                 </div>
               </WCard>
@@ -711,7 +755,7 @@ export default function WebappLayout({
               {/* Welcome header */}
               <div>
                 <h1 style={{ ...heading, fontSize: '1.8rem', marginBottom: '8px' }}>
-                  Rekentool Ruimte voor Stadslogistiek
+                  Ruimtemodel Stadslogistiek
                 </h1>
                 <p style={{ ...bodyText, fontSize: '1rem', maxWidth: '640px', lineHeight: 1.6 }}>
                   Bereken de benodigde laad- en losruimte voor uw stedelijke logistiek op basis van

@@ -19,7 +19,7 @@ import type { SimulationState } from '@/lib/use-simulation-state';
 // Theme types
 // ---------------------------------------------------------------------------
 
-export type ParameterTheme = 'rebel' | 'dmi' | 'webapp';
+export type ParameterTheme = 'dmi' | 'webapp';
 
 interface ThemeColors {
   bg: string;
@@ -39,27 +39,7 @@ interface ThemeColors {
   fontFamily: string;
 }
 
-function getThemeColors(theme: ParameterTheme): ThemeColors {
-  if (theme === 'rebel') {
-    return {
-      bg: '#2d2d2d',
-      cardBg: '#ffffff',
-      headerBg: '#c0504d',
-      headerColor: '#ffffff',
-      border: '#e0e0e0',
-      text: '#333333',
-      textMuted: '#666666',
-      accent: '#c0504d',
-      accentText: '#ffffff',
-      inputBorder: '#e0e0e0',
-      inputBg: '#ffffff',
-      changedBg: '#fff8e1',
-      warningBg: '#fff3e0',
-      warningBorder: '#ff9800',
-      fontFamily: 'Calibri, Arial, sans-serif',
-    };
-  }
-  // dmi / webapp share DMI palette
+function getThemeColors(_theme: ParameterTheme): ThemeColors {
   return {
     bg: '#f5f7fa',
     cardBg: '#ffffff',
@@ -533,7 +513,7 @@ export function DeliveryProfileEditor({
               <div
                 style={{
                   padding: '6px 12px',
-                  backgroundColor: theme === 'rebel' ? '#f0f8ff' : '#f0f4ff',
+                  backgroundColor: '#f0f4ff',
                   borderLeft: `3px solid ${tc.accent}`,
                   marginBottom: '8px',
                   fontFamily: tc.fontFamily,

@@ -59,7 +59,7 @@ export const SIM_PARAMS = {
   intervalMinutes: 10,
   minutesPerHour: 60,
   hoursPerDay: 24,
-  numSimulations: 1000,
+  numSimulations: 2500,
 };
 
 // Service levels

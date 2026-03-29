@@ -25,7 +25,7 @@ import {
   type DistributionDef,
 } from '@/lib/simulation';
 
-export type LayoutType = 'rebel' | 'dmi' | 'webapp';
+export type LayoutType = 'dmi' | 'webapp';
 
 export interface SimulationState {
   // Inputs

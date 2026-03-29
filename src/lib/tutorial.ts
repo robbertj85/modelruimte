@@ -12,7 +12,6 @@ export interface TutorialStep {
   navigateTo: {
     webapp: string | null;
     dmi: string | null;
-    rebel: string | null;
   };
   title: string;
   description: string;
@@ -23,16 +22,16 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'welcome',
     target: null,
-    navigateTo: { webapp: null, dmi: null, rebel: null },
+    navigateTo: { webapp: null, dmi: null },
     title: 'Welkom bij de Tutorial',
     description:
-      'Deze interactieve rondleiding laat u stap voor stap zien hoe u de Rekentool Ruimte voor Stadslogistiek gebruikt. U leert hoe u functies invoert, voertuigen clustert, service levels instelt en de simulatie uitvoert.',
+      'Deze interactieve rondleiding laat u stap voor stap zien hoe u het Ruimtemodel Stadslogistiek gebruikt. U leert hoe u functies invoert, voertuigen clustert, service levels instelt en de simulatie uitvoert.',
     placement: 'center',
   },
   {
     id: 'navigation',
     target: 'nav-tabs',
-    navigateTo: { webapp: 'dashboard', dmi: 'cockpit', rebel: 'cockpit' },
+    navigateTo: { webapp: 'dashboard', dmi: 'cockpit' },
     title: 'Navigatie',
     description:
       'Gebruik de navigatieknoppen om tussen de verschillende onderdelen van de tool te schakelen. Elk tabblad heeft een specifieke functie: van invoer tot resultaten.',
@@ -41,7 +40,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'function-inputs',
     target: 'function-inputs',
-    navigateTo: { webapp: 'invoer', dmi: 'cockpit', rebel: 'cockpit' },
+    navigateTo: { webapp: 'invoer', dmi: 'cockpit' },
     title: 'Inventarisatie Functies',
     description:
       'Hier voert u het aantal eenheden per stedelijke functie in (bijv. woningen, supermarkten, kantoren). Deze aantallen bepalen het verwachte verkeer en de bijbehorende ruimtebehoefte.',
@@ -50,7 +49,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'preset-data',
     target: 'preset-gerard',
-    navigateTo: { webapp: 'invoer', dmi: 'cockpit', rebel: 'inputs' },
+    navigateTo: { webapp: 'invoer', dmi: 'cockpit' },
     title: 'Voorbeelddata Laden',
     description:
       'Klik op "Gerard Doustraat" om voorbeelddata te laden van een echte casus in Amsterdam. Dit helpt u snel te starten zonder handmatig alle waarden in te voeren. Of selecteer een leeg model om de waarden van uw eigen project in te voeren.',
@@ -59,7 +58,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'clustering',
     target: 'cluster-matrix',
-    navigateTo: { webapp: 'clustering', dmi: 'cockpit', rebel: 'cockpit' },
+    navigateTo: { webapp: 'clustering', dmi: 'cockpit' },
     title: 'Voertuig Clustering',
     description:
       'Wijs voertuigtypen toe aan clusters. Voertuigen in hetzelfde cluster delen dezelfde laad-/losruimte. Gebruik de radioknoppen om elk voertuigtype aan een cluster toe te wijzen.',
@@ -68,7 +67,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'service-levels',
     target: 'service-levels',
-    navigateTo: { webapp: 'clustering', dmi: 'cockpit', rebel: 'cockpit' },
+    navigateTo: { webapp: 'clustering', dmi: 'cockpit' },
     title: 'Service Level',
     description:
       'Stel per cluster het gewenste service level in (75%–95%). Een hoger service level betekent meer ruimte om pieken op te vangen, maar vereist ook meer laad-/losoppervlak.',
@@ -77,7 +76,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'run-simulation',
     target: 'run-simulation',
-    navigateTo: { webapp: 'clustering', dmi: 'cockpit', rebel: 'cockpit' },
+    navigateTo: { webapp: 'clustering', dmi: 'cockpit' },
     title: 'Simulatie Uitvoeren',
     description:
       'Klik op "Run Simulaties" om de Monte Carlo simulatie te starten. De slider bepaalt het aantal simulaties — meer simulaties geven nauwkeurigere resultaten maar duren langer.',
@@ -86,7 +85,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'kpi-results',
     target: 'kpi-results',
-    navigateTo: { webapp: 'resultaten', dmi: 'cockpit', rebel: 'cockpit' },
+    navigateTo: { webapp: 'resultaten', dmi: 'cockpit' },
     title: 'Resultaten: KPI\'s',
     description:
       'Na de simulatie verschijnen hier de belangrijkste kengetallen: totaal aantal functies, verwachte voertuigen per dag, benodigde lengte en oppervlakte voor laden en lossen.',
@@ -95,7 +94,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'result-charts',
     target: 'result-charts',
-    navigateTo: { webapp: 'resultaten', dmi: 'cockpit', rebel: 'cockpit' },
+    navigateTo: { webapp: 'resultaten', dmi: 'cockpit' },
     title: 'Resultaten: Grafieken',
     description:
       'De grafieken tonen gedetailleerde resultaten per cluster: ruimteverdeling, voertuigaankomsten en de service level curve. Klik op een cluster voor meer details.',
@@ -104,10 +103,10 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: 'completion',
     target: null,
-    navigateTo: { webapp: null, dmi: null, rebel: null },
+    navigateTo: { webapp: null, dmi: null },
     title: 'Tutorial Voltooid!',
     description:
-      'U kent nu de basisstappen van de rekentool. Begin met het invoeren van uw eigen gegevens, of bekijk de uitgewerkte Gerard Doustraat casus in de handleiding voor een compleet voorbeeld met toelichting.',
+      'U kent nu de basisstappen van het Ruimtemodel. Begin met het invoeren van uw eigen gegevens, of bekijk de uitgewerkte Gerard Doustraat casus in de handleiding voor een compleet voorbeeld met toelichting.',
     placement: 'center',
   },
 ];

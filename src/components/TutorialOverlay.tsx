@@ -419,15 +419,16 @@ export default function TutorialOverlay({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  padding: '6px 12px',
+                  padding: '10px 16px',
                   borderRadius: '6px',
                   border: `1px solid ${DMI.blueTint2}`,
                   backgroundColor: 'transparent',
                   color: DMI.darkBlue,
                   fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
                   fontWeight: 600,
-                  fontSize: '0.8rem',
+                  fontSize: '0.85rem',
                   cursor: 'pointer',
+                  minHeight: '44px',
                 }}
               >
                 <ChevronLeft size={14} /> Vorige
@@ -439,15 +440,16 @@ export default function TutorialOverlay({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                padding: '6px 16px',
+                padding: '10px 20px',
                 borderRadius: '6px',
                 border: 'none',
                 backgroundColor: DMI.darkBlue,
                 color: DMI.white,
                 fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
                 fontWeight: 700,
-                fontSize: '0.8rem',
+                fontSize: '0.85rem',
                 cursor: 'pointer',
+                minHeight: '44px',
               }}
             >
               {tutorial.currentStepIndex < tutorial.totalSteps - 1 ? (

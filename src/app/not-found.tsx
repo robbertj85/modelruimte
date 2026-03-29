@@ -21,7 +21,7 @@ export default function NotFound() {
             fontWeight: 500,
           }}
         >
-          Terug naar de rekentool
+          Terug naar Ruimtemodel Stadslogistiek
         </Link>
       </div>
     </div>

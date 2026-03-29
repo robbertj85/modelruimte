@@ -27,7 +27,7 @@ type FeedbackType = 'bug' | 'suggestie' | 'vraag';
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
 interface FeedbackButtonProps {
-  variant: 'webapp' | 'dmi' | 'rebel';
+  variant: 'webapp' | 'dmi';
 }
 
 export default function FeedbackButton({ variant }: FeedbackButtonProps) {
@@ -126,36 +126,6 @@ export default function FeedbackButton({ variant }: FeedbackButtonProps) {
             }}
           >
             <MessageSquarePlus size={14} />
-            Feedback
-          </button>
-        );
-      case 'rebel':
-        return (
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '0 14px',
-              height: '100%',
-              backgroundColor: 'transparent',
-              color: '#cccccc',
-              border: 'none',
-              borderRight: '1px solid #666666',
-              fontSize: '0.7rem',
-              fontFamily: 'Calibri, Arial, sans-serif',
-              fontWeight: 400,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(255,255,255,0.05)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-            }}
-          >
-            <MessageSquarePlus size={12} />
             Feedback
           </button>
         );

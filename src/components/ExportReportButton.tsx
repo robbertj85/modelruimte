@@ -11,7 +11,7 @@ import {
 
 interface ExportReportButtonProps {
   reportInput: ReportInput;
-  variant: 'webapp' | 'dmi' | 'rebel';
+  variant: 'webapp' | 'dmi';
 }
 
 export default function ExportReportButton({ reportInput, variant }: ExportReportButtonProps) {
@@ -65,7 +65,7 @@ export default function ExportReportButton({ reportInput, variant }: ExportRepor
   );
 }
 
-function getStyles(variant: 'webapp' | 'dmi' | 'rebel') {
+function getStyles(variant: 'webapp' | 'dmi') {
   const dropdownBase: React.CSSProperties = {
     position: 'absolute',
     top: '100%',
@@ -118,40 +118,6 @@ function getStyles(variant: 'webapp' | 'dmi' | 'rebel') {
         backgroundColor: 'transparent',
         color: '#ffffff',
         fontFamily: 'var(--font-ibm-plex-sans-condensed), sans-serif',
-      } as React.CSSProperties,
-    };
-  }
-
-  if (variant === 'rebel') {
-    return {
-      iconSize: 12,
-      trigger: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        padding: '0 14px',
-        height: '100%',
-        backgroundColor: 'transparent',
-        color: '#cccccc',
-        border: 'none',
-        borderRight: '1px solid #666666',
-        fontSize: '0.7rem',
-        fontFamily: 'Calibri, Arial, sans-serif',
-        fontWeight: 400,
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-      } as React.CSSProperties,
-      dropdown: {
-        ...dropdownBase,
-        backgroundColor: '#2d2d2d',
-        border: '1px solid #555',
-      } as React.CSSProperties,
-      item: {
-        ...itemBase,
-        backgroundColor: 'transparent',
-        color: '#cccccc',
-        fontFamily: 'Calibri, Arial, sans-serif',
-        fontSize: '0.7rem',
       } as React.CSSProperties,
     };
   }
