@@ -497,6 +497,28 @@ export function getDefaultDeliveryProfiles(): Record<string, DeliveryProfile> {
   return result;
 }
 
+// Default BVO (Bruto Vloeroppervlak, gross floor area) in m² per unit.
+// Source: handleiding-tabel in content.ts — indicatieve gemiddelden voor
+// gebiedsontwikkeling waarbij alleen m² BVO bekend is.
+export const DEFAULT_BVO_PER_UNIT: Record<string, number> = {
+  F1: 90,      // Woningen
+  F2: 1500,    // Supermarkt
+  F3: 350,     // Retail Food
+  F4: 750,     // Retail Winkels (Keten)
+  F5: 350,     // Retail Winkels (Onafh.)
+  F6: 500,     // Restaurant (High-end)
+  F7: 250,     // Restaurant (Basis)
+  F8: 250,     // Café
+  F9: 3000,    // Hotel
+  F10: 1250,   // Kantoor (Klein)
+  F11: 5000,   // Kantoor (Middel)
+  F12: 10000,  // Kantoor (Groot)
+};
+
+export function getDefaultBvoPerUnit(): Record<string, number> {
+  return { ...DEFAULT_BVO_PER_UNIT };
+}
+
 // Profile metadata: description and remarks per F×D profile (extracted from xlsm BP sheets)
 export const PROFILE_METADATA: Record<string, { description: string; remarks: string }> = {
   'F1_D7': { description: 'Pakketleveringen aan woningen', remarks: 'Eén bestelwagen per afleveradres.' },

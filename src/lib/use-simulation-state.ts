@@ -16,6 +16,7 @@ import {
   getDefaultVehicleLengths,
   getDefaultDeliveryDays,
   getDefaultDeliveryProfiles,
+  getDefaultBvoPerUnit,
   type DeliveryProfile,
 } from '@/lib/model-data';
 import {
@@ -27,9 +28,14 @@ import {
 
 export type LayoutType = 'dmi' | 'webapp';
 
+export type FunctionInputMode = 'count' | 'bvo';
+
 export interface SimulationState {
   // Inputs
   functionCounts: Record<string, number>;
+  functionInputMode: Record<string, FunctionInputMode>;
+  functionBvo: Record<string, number>;
+  bvoPerUnit: Record<string, number>;
   clusterAssignments: Record<string, number>;
   clusterServiceLevels: Record<number, number>;
   numSimulations: number;
@@ -61,6 +67,10 @@ export interface SimulationState {
 
   // Handlers
   handleFunctionCountChange: (funcId: string, value: string) => void;
+  handleFunctionInputModeChange: (funcId: string, mode: FunctionInputMode) => void;
+  handleAllFunctionInputModeChange: (mode: FunctionInputMode) => void;
+  handleFunctionBvoChange: (funcId: string, value: string) => void;
+  handleBvoPerUnitChange: (funcId: string, value: number) => void;
   handleClusterMatrixChange: (vehicleId: string, clusterId: number) => void;
   handleServiceLevelChange: (clusterId: number, value: string) => void;
   handleClusterNameChange: (clusterId: number, name: string) => void;
@@ -107,6 +117,9 @@ export function useSimulationState(): SimulationState {
   const [functionCounts, setFunctionCounts] = useState<Record<string, number>>(
     () => ({ ...DEFAULT_FUNCTION_COUNTS })
   );
+  const [functionInputMode, setFunctionInputMode] = useState<Record<string, FunctionInputMode>>({});
+  const [functionBvo, setFunctionBvo] = useState<Record<string, number>>({});
+  const [bvoPerUnit, setBvoPerUnit] = useState<Record<string, number>>(getDefaultBvoPerUnit);
   const [clusterAssignments, setClusterAssignments] = useState<Record<string, number>>(
     () => ({ ...DEFAULT_CLUSTERS })
   );
@@ -166,6 +179,10 @@ export function useSimulationState(): SimulationState {
     for (const [k, v] of Object.entries(deliveryDays)) {
       if (defDays[k] !== undefined && v !== defDays[k]) return true;
     }
+    const defBvo = getDefaultBvoPerUnit();
+    for (const [k, v] of Object.entries(bvoPerUnit)) {
+      if (defBvo[k] !== undefined && v !== defBvo[k]) return true;
+    }
     const defProfiles = DELIVERY_PROFILES;
     for (const [key, profile] of Object.entries(deliveryProfiles)) {
       const def = defProfiles[key];
@@ -187,7 +204,7 @@ export function useSimulationState(): SimulationState {
       }
     }
     return false;
-  }, [vehicleLengths, deliveryDays, deliveryProfiles, intervalMinutes, customFunctions, customVehicles, customDistributions]);
+  }, [vehicleLengths, deliveryDays, deliveryProfiles, intervalMinutes, customFunctions, customVehicles, customDistributions, bvoPerUnit]);
 
   const clusterIds = useMemo(
     () => getUniqueClusterIds(clusterAssignments),
@@ -215,6 +232,80 @@ export function useSimulationState(): SimulationState {
       }));
     },
     []
+  );
+
+  const handleFunctionInputModeChange = useCallback(
+    (funcId: string, mode: FunctionInputMode) => {
+      setFunctionInputMode((prev) => ({ ...prev, [funcId]: mode }));
+      if (mode === 'bvo') {
+        // Seed BVO from current count × m²/eenheid so the user sees the equivalent.
+        setFunctionBvo((prev) => {
+          const perUnit = bvoPerUnit[funcId];
+          if (!perUnit) return prev;
+          const count = functionCounts[funcId] ?? 0;
+          return { ...prev, [funcId]: count * perUnit };
+        });
+      }
+    },
+    [bvoPerUnit, functionCounts]
+  );
+
+  const handleAllFunctionInputModeChange = useCallback(
+    (mode: FunctionInputMode) => {
+      setFunctionInputMode((prev) => {
+        const next = { ...prev };
+        for (const [funcId, perUnit] of Object.entries(bvoPerUnit)) {
+          if (perUnit && perUnit > 0) next[funcId] = mode;
+        }
+        return next;
+      });
+      if (mode === 'bvo') {
+        setFunctionBvo((prev) => {
+          const next = { ...prev };
+          for (const [funcId, perUnit] of Object.entries(bvoPerUnit)) {
+            if (!perUnit || perUnit <= 0) continue;
+            const count = functionCounts[funcId] ?? 0;
+            next[funcId] = count * perUnit;
+          }
+          return next;
+        });
+      }
+    },
+    [bvoPerUnit, functionCounts]
+  );
+
+  const handleFunctionBvoChange = useCallback(
+    (funcId: string, value: string) => {
+      const parsed = parseFloat(value);
+      const bvo = isNaN(parsed) ? 0 : Math.max(0, parsed);
+      setFunctionBvo((prev) => ({ ...prev, [funcId]: bvo }));
+      const perUnit = bvoPerUnit[funcId];
+      if (perUnit && perUnit > 0) {
+        setFunctionCounts((prev) => ({
+          ...prev,
+          [funcId]: Math.round(bvo / perUnit),
+        }));
+      }
+    },
+    [bvoPerUnit]
+  );
+
+  const handleBvoPerUnitChange = useCallback(
+    (funcId: string, value: number) => {
+      const safe = Math.max(0.1, value);
+      setBvoPerUnit((prev) => ({ ...prev, [funcId]: safe }));
+      // If this function is currently entered as BVO, re-derive the count.
+      if (functionInputMode[funcId] === 'bvo') {
+        const bvo = functionBvo[funcId];
+        if (bvo !== undefined) {
+          setFunctionCounts((prev) => ({
+            ...prev,
+            [funcId]: Math.round(bvo / safe),
+          }));
+        }
+      }
+    },
+    [functionInputMode, functionBvo]
   );
 
   const handleClusterMatrixChange = useCallback(
@@ -330,6 +421,8 @@ export function useSimulationState(): SimulationState {
     for (const f of FUNCTIONS) blank[f.id] = 0;
     for (const cf of customFunctions) blank[cf.id] = 0;
     setFunctionCounts(blank);
+    setFunctionInputMode({});
+    setFunctionBvo({});
     setClusterAssignments({ ...DEFAULT_CLUSTERS });
     setClusterServiceLevels({ ...DEFAULT_CLUSTER_SERVICE_LEVELS });
     setResults(null);
@@ -337,6 +430,8 @@ export function useSimulationState(): SimulationState {
 
   const resetToGerardDoustraat = useCallback(() => {
     setFunctionCounts({ ...DEFAULT_FUNCTION_COUNTS });
+    setFunctionInputMode({});
+    setFunctionBvo({});
     setClusterAssignments({ ...DEFAULT_CLUSTERS });
     setClusterServiceLevels({ ...DEFAULT_CLUSTER_SERVICE_LEVELS });
     setResults(null);
@@ -392,6 +487,7 @@ export function useSimulationState(): SimulationState {
     setVehicleLengths(getDefaultVehicleLengths());
     setDeliveryDays(getDefaultDeliveryDays());
     setDeliveryProfiles(getDefaultDeliveryProfiles());
+    setBvoPerUnit(getDefaultBvoPerUnit());
     setIntervalMinutes(SIM_PARAMS.intervalMinutes);
     setCustomFunctions([]);
     setCustomVehicles([]);
@@ -472,6 +568,9 @@ export function useSimulationState(): SimulationState {
 
   return {
     functionCounts,
+    functionInputMode,
+    functionBvo,
+    bvoPerUnit,
     clusterAssignments,
     clusterServiceLevels,
     numSimulations,
@@ -495,6 +594,10 @@ export function useSimulationState(): SimulationState {
     allDistributions,
     hasAdvancedOverrides,
     handleFunctionCountChange,
+    handleFunctionInputModeChange,
+    handleAllFunctionInputModeChange,
+    handleFunctionBvoChange,
+    handleBvoPerUnitChange,
     handleClusterMatrixChange,
     handleServiceLevelChange,
     handleClusterNameChange,

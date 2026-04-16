@@ -934,7 +934,7 @@ export default function DmiCockpitLayout({
             {/* Panel 1: Inventarisatie Functies */}
             <div data-tutorial="function-inputs">
             <Panel title="Inventarisatie Functies">
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <button
                   data-tutorial="preset-gerard"
                   onClick={state.resetToGerardDoustraat}
@@ -958,14 +958,63 @@ export default function DmiCockpitLayout({
                 >
                   Leeg model
                 </button>
+                {(() => {
+                  const bvoEnabledIds = Object.entries(state.bvoPerUnit)
+                    .filter(([, v]) => v && v > 0)
+                    .map(([id]) => id);
+                  const modesInUse = new Set(bvoEnabledIds.map((id) => state.functionInputMode[id] ?? 'count'));
+                  const allMode: 'count' | 'bvo' | 'mixed' = modesInUse.size === 1
+                    ? (modesInUse.has('bvo') ? 'bvo' : 'count')
+                    : 'mixed';
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                      <div
+                        role="group"
+                        aria-label="Invoermodus voor alle functies"
+                        style={{ display: 'flex', border: `1px solid ${DMI.blueTint2}`, borderRadius: '4px', overflow: 'hidden' }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => state.handleAllFunctionInputModeChange('count')}
+                          style={{
+                            padding: '3px 8px', border: 'none', cursor: 'pointer',
+                            backgroundColor: allMode === 'count' ? DMI.mediumBlue : DMI.white,
+                            color: allMode === 'count' ? DMI.white : DMI.darkBlue,
+                            fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                            fontSize: '0.65rem', fontWeight: 600,
+                          }}
+                        >
+                          Aantal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => state.handleAllFunctionInputModeChange('bvo')}
+                          style={{
+                            padding: '3px 8px', border: 'none', borderLeft: `1px solid ${DMI.blueTint2}`, cursor: 'pointer',
+                            backgroundColor: allMode === 'bvo' ? DMI.mediumBlue : DMI.white,
+                            color: allMode === 'bvo' ? DMI.white : DMI.darkBlue,
+                            fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                            fontSize: '0.65rem', fontWeight: 600,
+                          }}
+                        >
+                          BVO (m²)
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px' }}>
                 {/* Left: function inputs with mini bars */}
-                <div style={{ flex: '1 1 55%', maxHeight: isMobile ? 'none' : '440px', overflowY: 'auto' }}>
+                <div style={{ flex: '1 1 55%', maxHeight: isMobile ? 'none' : '440px', overflowY: 'auto', paddingRight: '20px' }}>
                   {state.allFunctions.map((func, idx) => {
                     const count = state.functionCounts[func.id] ?? 0;
                     const barWidth = maxFunctionCount > 0 ? (count / maxFunctionCount) * 100 : 0;
                     const isBuiltIn = FUNCTIONS.some((f) => f.id === func.id);
+                    const perUnit = state.bvoPerUnit[func.id];
+                    const hasBvo = perUnit !== undefined && perUnit > 0;
+                    const mode = state.functionInputMode[func.id] ?? 'count';
+                    const bvoValue = state.functionBvo[func.id] ?? (hasBvo ? count * perUnit : 0);
                     return (
                       <div key={func.id} style={{ marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
@@ -984,13 +1033,67 @@ export default function DmiCockpitLayout({
                             </TooltipContent>
                           </Tooltip>
                           )}
+                          {hasBvo && (
+                            <div
+                              role="group"
+                              aria-label="Invoermodus: aantal of BVO"
+                              style={{
+                                display: 'flex',
+                                border: `1px solid ${DMI.blueTint2}`,
+                                borderRadius: '3px',
+                                overflow: 'hidden',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => state.handleFunctionInputModeChange(func.id, 'count')}
+                                title={`Aantal ${func.unit}`}
+                                style={{
+                                  padding: '1px 5px',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  backgroundColor: mode === 'count' ? DMI.mediumBlue : DMI.white,
+                                  color: mode === 'count' ? DMI.white : DMI.darkBlue,
+                                  fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                                  fontSize: '0.6rem',
+                                  fontWeight: 600,
+                                  lineHeight: 1.3,
+                                }}
+                              >
+                                #
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => state.handleFunctionInputModeChange(func.id, 'bvo')}
+                                title={`BVO (m²) — rekent om met ${perUnit.toLocaleString('nl-NL')} m²/${func.unit.replace(/en$/, '')}`}
+                                style={{
+                                  padding: '1px 5px',
+                                  border: 'none',
+                                  borderLeft: `1px solid ${DMI.blueTint2}`,
+                                  cursor: 'pointer',
+                                  backgroundColor: mode === 'bvo' ? DMI.mediumBlue : DMI.white,
+                                  color: mode === 'bvo' ? DMI.white : DMI.darkBlue,
+                                  fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                                  fontSize: '0.6rem',
+                                  fontWeight: 600,
+                                  lineHeight: 1.3,
+                                }}
+                              >
+                                m²
+                              </button>
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <input
                             type="number"
                             min={0}
-                            value={count}
-                            onChange={(e) => state.handleFunctionCountChange(func.id, e.target.value)}
+                            step={mode === 'bvo' ? 10 : 1}
+                            value={mode === 'bvo' ? Math.round(bvoValue) : count}
+                            onChange={(e) => mode === 'bvo'
+                              ? state.handleFunctionBvoChange(func.id, e.target.value)
+                              : state.handleFunctionCountChange(func.id, e.target.value)}
                             style={{
                               width: '80px',
                               padding: '3px 6px',
@@ -1013,6 +1116,11 @@ export default function DmiCockpitLayout({
                               }}
                             />
                           </div>
+                          {mode === 'bvo' && hasBvo && (
+                            <span style={{ fontSize: '0.6rem', color: DMI.mediumBlue, fontFamily: 'var(--font-ibm-plex-mono), monospace', whiteSpace: 'nowrap' }}>
+                              ≈ {count.toLocaleString('nl-NL')}
+                            </span>
+                          )}
                         </div>
                       </div>
                     );

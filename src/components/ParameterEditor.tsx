@@ -12,6 +12,7 @@ import {
   getDefaultVehicleLengths,
   getDefaultDeliveryDays,
   getDefaultDeliveryProfiles,
+  getDefaultBvoPerUnit,
 } from '@/lib/model-data';
 import type { SimulationState } from '@/lib/use-simulation-state';
 
@@ -66,6 +67,7 @@ function getThemeColors(_theme: ParameterTheme): ThemeColors {
 const defaultLengths = getDefaultVehicleLengths();
 const defaultDays = getDefaultDeliveryDays();
 const defaultProfiles = getDefaultDeliveryProfiles();
+const defaultBvo = getDefaultBvoPerUnit();
 
 function isChanged(current: number, defaultVal: number | undefined): boolean {
   return defaultVal !== undefined && current !== defaultVal;
@@ -274,16 +276,22 @@ export function AlgemeenEditor({
         <h4 style={{ fontFamily: tc.fontFamily, fontWeight: 700, fontSize: '0.85rem', color: tc.text, marginBottom: '8px' }}>
           Functies
         </h4>
+        <p style={{ fontFamily: tc.fontFamily, fontSize: '0.75rem', color: tc.textMuted, marginBottom: '8px', lineHeight: 1.5 }}>
+          De kolom <strong>BVO/eenheid</strong> bepaalt de omrekening bij de BVO-invoer in het functies-overzicht. Standaardwaarden komen uit de handleiding; pas ze aan op basis van uw project (bv. 30 m² voor studentenwoningen, 200 m² voor villa&apos;s). Een waarde van 0 schakelt BVO-invoer uit.
+        </p>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               <th style={{ ...headerCellStyle, textAlign: 'left' }}>Functie</th>
               <th style={{ ...headerCellStyle, textAlign: 'left' }}>Eenheid</th>
+              <th style={{ ...headerCellStyle, textAlign: 'center' }}>BVO/eenheid (m²)</th>
             </tr>
           </thead>
           <tbody>
             {state.allFunctions.map((f) => {
               const isCustom = !FUNCTIONS.find((df) => df.id === f.id);
+              const currentBvo = state.bvoPerUnit[f.id] ?? 0;
+              const bvoChanged = isChanged(currentBvo, defaultBvo[f.id]) || (isCustom && currentBvo > 0);
               return (
                 <tr key={f.id}>
                   <td style={cellStyle}>
@@ -322,6 +330,16 @@ export function AlgemeenEditor({
                     ) : (
                       f.unit
                     )}
+                  </td>
+                  <td style={{ ...cellStyle, textAlign: 'center' }}>
+                    <input
+                      type="number"
+                      min={0}
+                      step={10}
+                      value={currentBvo}
+                      onChange={(e) => state.handleBvoPerUnitChange(f.id, parseFloat(e.target.value) || 0)}
+                      style={inputStyle(bvoChanged)}
+                    />
                   </td>
                 </tr>
               );

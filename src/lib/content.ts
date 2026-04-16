@@ -141,11 +141,11 @@ export const HANDLEIDING_SECTIONS: HandleidingSection[] = [
     title: '2. Input voor het model',
     paragraphs: [
       'De invoer gebeurt op **drie plekken** in het model:',
-      '**1. Inventarisatie van functies:** Geef het aantal eenheden in (of een inschatting ervan) per functie. Functies zijn onder andere: Woningen, Supermarkt, Retail Food, Winkels (keten en onafhankelijk), Horeca, Hotels, en Kantoren (klein, middel, groot). Elke functie wordt uitgedrukt in een specifieke eenheid (bijv. aantal woningen, aantal vestigingen).',
+      '**1. Inventarisatie van functies:** Geef het aantal eenheden in (of een inschatting ervan) per functie. Functies zijn onder andere: Woningen, Supermarkt, Retail Food, Winkels (keten en onafhankelijk), Horeca, Hotels, en Kantoren (klein, middel, groot). Elke functie wordt uitgedrukt in een specifieke eenheid (bijv. aantal woningen, aantal vestigingen). Per functie kunt u via de **# / m²**-knop wisselen tussen invoer in aantal eenheden of in m\u00B2 BVO; bovenaan het functies-overzicht staat een **Aantal / BVO (m\u00B2)**-knop om alle functies tegelijk om te zetten.',
       '**2. Bepalen van clusters:** Voertuigtypen worden ingedeeld in clusters die dezelfde fysieke laad- en losruimte delen. Het meest eenvoudige is om alle voertuigen aan \u00e9\u00e9n cluster toe te bedelen. Door bepaalde voertuigen in een aparte cluster te plaatsen (bv. cargofietsen of service bestelwagens) krijg je een gedetailleerder beeld en kun je bijvoorbeeld besluiten om voor deze voertuigen speciaal ingerichte zones of extra parkeerplekken te voorzien.',
       '**3. Bepalen van service level per cluster:** Keuze binnen het bereik 75%\u201395%. Een hoger serviceniveau betekent een hogere kans dat een laad- en losplek vrij is op het moment dat het logistiek voertuig aankomt, maar ook meer ruimte die gereserveerd moet worden. Een lager niveau bespaart ruimte, maar vergroot het risico op zoekverkeer, dubbel parkeren en onveilige situaties.',
       'Bij een **herinrichtingsproject** kunt u de functies ophalen door: (1) vast te stellen welke adressen binnen de scope vallen, (2) de BAG-gegevens te filteren op die adressen, (3) per adres de functie toe te kennen overeenkomstig de functies uit het model, en (4) het aantal eenheden per functie op te tellen.',
-      'Bij een **ontwikkelingsproject** waarbij alleen m\u00B2 BVO bekend is, kunt u onderstaande omrekentabel gebruiken. Dit is een ruwe omzetting van m\u00B2 naar aantal eenheden. Pas de input altijd aan op basis van de specifieke eigenschappen van het project.',
+      'Bij een **ontwikkelingsproject** waarbij alleen m\u00B2 BVO bekend is, kunt u de invoer per functie op **m\u00B2** zetten en het aantal m\u00B2 BVO direct intypen. Het model rekent dit automatisch om naar het aantal eenheden op basis van de gemiddelde BVO per eenheid (zie tabel hieronder). De gehanteerde m\u00B2/eenheid is per functie aanpasbaar onder **Parameters → Functies** — pas deze waarden aan op basis van de specifieke eigenschappen van uw project (bijvoorbeeld 30 m\u00B2 voor studentenwoningen of 200 m\u00B2 voor villa\u2019s).',
     ],
     tables: [
       {
@@ -164,7 +164,7 @@ export const HANDLEIDING_SECTIONS: HandleidingSection[] = [
           ['Kantoren', 'Kantoor middel', '5.000 m\u00B2', '50%'],
           ['Kantoren', 'Kantoor groot', '10.000 m\u00B2', '\u2014'],
         ],
-        caption: 'Opgelet: deze omrekentabel is een ruwe en gemiddelde inschatting. Het effectieve aantal eenheden is afhankelijk van type ontwikkeling en type gebied. Controleer altijd of de inschatting klopt op basis van de beschikbare informatie.',
+        caption: 'Deze waarden worden door het model gebruikt voor de automatische BVO\u2192eenheid omrekening en zijn aanpasbaar onder Parameters → Functies. Het zijn ruwe en gemiddelde inschattingen; het effectieve aantal eenheden is afhankelijk van type ontwikkeling en type gebied. Controleer altijd of de inschatting klopt op basis van de beschikbare informatie.',
       },
     ],
     diagrams: ['input-structure'],
