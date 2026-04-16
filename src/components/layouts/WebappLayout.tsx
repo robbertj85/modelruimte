@@ -225,7 +225,7 @@ export default function WebappLayout({
   const tabs: { id: WebappTab; label: string; icon: React.ReactNode }[] = [
     { id: 'cover', label: 'Info', icon: <Info size={18} /> },
     { id: 'handleiding', label: 'Handleiding', icon: <BookOpen size={18} /> },
-    { id: 'dashboard', label: 'Spreadsheet', icon: <LayoutDashboard size={18} /> },
+    { id: 'dashboard', label: 'Cockpit', icon: <LayoutDashboard size={18} /> },
     { id: 'invoer', label: 'Invoer', icon: <ClipboardList size={18} /> },
     { id: 'parameters', label: 'Parameters', icon: <Settings size={18} /> },
     { id: 'clustering', label: 'Clustering', icon: <Network size={18} /> },
@@ -1098,7 +1098,7 @@ export default function WebappLayout({
                               style={{
                                 display: 'flex',
                                 border: `1px solid ${DMI.blueTint2}`,
-                                borderRadius: '6px',
+                                borderRadius: '8px',
                                 overflow: 'hidden',
                                 flexShrink: 0,
                               }}
@@ -1107,15 +1107,15 @@ export default function WebappLayout({
                                 type="button"
                                 onClick={() => state.handleFunctionInputModeChange(func.id, 'count')}
                                 style={{
-                                  padding: '4px 8px',
+                                  padding: '8px 12px',
                                   border: 'none',
                                   cursor: 'pointer',
                                   backgroundColor: mode === 'count' ? DMI.mediumBlue : DMI.white,
                                   color: mode === 'count' ? DMI.white : DMI.darkBlue,
                                   fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                  fontSize: '0.7rem',
+                                  fontSize: '0.9rem',
                                   fontWeight: 600,
-                                  minWidth: '28px',
+                                  minWidth: '40px',
                                 }}
                               >
                                 #
@@ -1124,16 +1124,16 @@ export default function WebappLayout({
                                 type="button"
                                 onClick={() => state.handleFunctionInputModeChange(func.id, 'bvo')}
                                 style={{
-                                  padding: '4px 8px',
+                                  padding: '8px 12px',
                                   border: 'none',
                                   borderLeft: `1px solid ${DMI.blueTint2}`,
                                   cursor: 'pointer',
                                   backgroundColor: mode === 'bvo' ? DMI.mediumBlue : DMI.white,
                                   color: mode === 'bvo' ? DMI.white : DMI.darkBlue,
                                   fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                                  fontSize: '0.7rem',
+                                  fontSize: '0.9rem',
                                   fontWeight: 600,
-                                  minWidth: '28px',
+                                  minWidth: '40px',
                                 }}
                               >
                                 m²
@@ -1157,53 +1157,33 @@ export default function WebappLayout({
                         </Tooltip>
                       )}
 
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
-                          {/* Unit label - hidden on mobile */}
-                          {!isMobile && (
-                            <span style={{ ...labelMono, fontSize: '0.65rem', width: '80px', textAlign: 'right' }}>
-                              {mode === 'bvo' ? 'm² BVO' : func.unit}
-                            </span>
-                          )}
-
-                          {/* Number input — count or BVO */}
-                          <input
-                            type="number"
-                            min={0}
-                            step={mode === 'bvo' ? 10 : 1}
-                            value={mode === 'bvo' ? Math.round(bvoValue) : count}
-                            onChange={(e) => mode === 'bvo'
-                              ? state.handleFunctionBvoChange(func.id, e.target.value)
-                              : state.handleFunctionCountChange(func.id, e.target.value)}
-                            style={{
-                              width: '90px',
-                              padding: '8px 12px',
-                              borderRadius: '8px',
-                              border: `1px solid ${DMI.blueTint2}`,
-                              backgroundColor: DMI.white,
-                              color: DMI.darkBlue,
-                              fontFamily: 'var(--font-ibm-plex-mono), monospace',
-                              fontSize: '0.9rem',
-                              fontWeight: 600,
-                              textAlign: 'right',
-                              outline: 'none',
-                              transition: 'border-color 0.2s ease',
-                            }}
-                            onFocus={(e) => { e.currentTarget.style.borderColor = DMI.mediumBlue; }}
-                            onBlur={(e) => { e.currentTarget.style.borderColor = DMI.blueTint2; }}
-                          />
-                        </div>
-                        <span
-                          style={{
-                            ...labelMono,
-                            fontSize: '0.65rem',
-                            color: DMI.mediumBlue,
-                            visibility: mode === 'bvo' && hasBvo ? 'visible' : 'hidden',
-                          }}
-                        >
-                          ≈ {count.toLocaleString('nl-NL')} {func.unit}
-                        </span>
-                      </div>
+                      <input
+                        type="number"
+                        min={0}
+                        step={mode === 'bvo' ? 10 : 1}
+                        value={mode === 'bvo' ? Math.round(bvoValue) : count}
+                        onChange={(e) => mode === 'bvo'
+                          ? state.handleFunctionBvoChange(func.id, e.target.value)
+                          : state.handleFunctionCountChange(func.id, e.target.value)}
+                        style={{
+                          width: '110px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: `1px solid ${DMI.blueTint2}`,
+                          backgroundColor: DMI.white,
+                          color: DMI.darkBlue,
+                          fontFamily: 'var(--font-ibm-plex-mono), monospace',
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          textAlign: 'right',
+                          outline: 'none',
+                          transition: 'border-color 0.2s ease',
+                          boxSizing: 'border-box',
+                          flexShrink: 0,
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = DMI.mediumBlue; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = DMI.blueTint2; }}
+                      />
                     </div>
                     );
                   })}
