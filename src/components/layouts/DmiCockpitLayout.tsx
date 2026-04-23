@@ -18,7 +18,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { VEHICLES, FUNCTIONS, LOADING_BAY_WIDTH_M } from '@/lib/model-data';
 import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
-import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
+import { COVER, HANDLEIDING_SECTIONS, PARTNER_SECTIONS, CONTACT, INTEGRATIONS, CASUS_GERARD_DOUSTRAAT, renderBold } from '@/lib/content';
 import { HandleidingDiagram } from '@/components/HandleidingDiagrams';
 import { HandleidingTableRenderer } from '@/components/HandleidingTable';
 import FeedbackButton from '@/components/FeedbackButton';
@@ -527,6 +527,46 @@ export default function DmiCockpitLayout({
                     {line}
                   </p>
                 ))}
+              </div>
+
+              {/* Integrations */}
+              <div style={{ borderTop: `1px solid ${DMI.blueTint2}`, paddingTop: '20px', marginTop: '16px' }}>
+                <p style={{ ...labelMono, marginBottom: '4px' }}>{INTEGRATIONS.label}</p>
+                <p style={{ ...bodyText, fontSize: '0.75rem', color: DMI.darkGray, margin: '0 0 10px', lineHeight: 1.6 }}>
+                  {INTEGRATIONS.intro}
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px' }}>
+                  {INTEGRATIONS.links.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        ...bodyText,
+                        fontSize: '0.75rem',
+                        color: DMI.darkBlue,
+                        textDecoration: 'none',
+                        padding: '4px 12px',
+                        borderRadius: '999px',
+                        border: `1px solid ${DMI.blueTint2}`,
+                        backgroundColor: DMI.white,
+                        transition: 'background-color 0.15s ease, border-color 0.15s ease',
+                        WebkitTapHighlightColor: DMI.blueTint3,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = DMI.blueTint3;
+                        e.currentTarget.style.borderColor = DMI.mediumBlue;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = DMI.white;
+                        e.currentTarget.style.borderColor = DMI.blueTint2;
+                      }}
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
               </div>
 
               {/* Layout toggle */}

@@ -105,6 +105,16 @@ export const CONTACT = {
   ],
 };
 
+export const INTEGRATIONS = {
+  label: 'Integraties',
+  intro:
+    'Externe systemen kunnen het model aanroepen via een REST API of via het Model Context Protocol (voor AI-agents).',
+  links: [
+    { label: 'API-referentie (ReDoc)', href: '/api-docs' },
+    { label: 'MCP instellen', href: '/mcp-connect' },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Cover page data
 // ---------------------------------------------------------------------------

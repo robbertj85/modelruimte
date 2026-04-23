@@ -18,6 +18,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## External integrations
+
+- **REST API** — see [`docs/API.md`](docs/API.md). JSON endpoints under `/api/v1/*` for model metadata and running simulations.
+- **OpenAPI spec** — machine-readable at `/api/v1/openapi.json`; human-readable ReDoc view at `/api-docs`.
+- **MCP server** — see [`docs/MCP.md`](docs/MCP.md). Model Context Protocol endpoint at `/api/mcp` for AI agents.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
