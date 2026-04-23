@@ -54,4 +54,4 @@ Delivery profiles (`DELIVERY_PROFILES` in `model-data.ts`) contain: stops per we
 - **Data & feedback:** Gemeente Amsterdam, Gemeente Utrecht, HvA
 - **Mede-gerealiseerd vanuit:** DMI Ecosysteem
 - **License:** EUPL-1.2 (matching the original xlsm model)
-- **Contact:** Laura.Tavernier@rebelgroup.com, dmiteam@minienw.nl
+- **Contact:** info@Rebelgroup.com (Laura Tavernier), dmiteam@minienw.nl

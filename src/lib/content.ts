@@ -100,7 +100,7 @@ export const PARTNER_LOGOS: PartnerLogo[] = PARTNER_SECTIONS.flatMap((s) => s.lo
 export const CONTACT = {
   label: 'Contact',
   lines: [
-    'Rebel: Laura.Tavernier@rebelgroup.com',
+    'Rebel (Laura Tavernier): info@Rebelgroup.com',
     'DMI (Robbert Janssen): dmiteam@minienw.nl',
   ],
 };
