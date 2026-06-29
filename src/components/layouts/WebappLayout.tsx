@@ -5,7 +5,10 @@ import type { SimulationState, LayoutType } from '@/lib/use-simulation-state';
 import { VEHICLES, FUNCTIONS, LOADING_BAY_WIDTH_M } from '@/lib/model-data';
 import { DMI, PERIOD_COLORS, FUNCTION_COLORS, CLUSTER_COLORS, SERVICE_LEVEL_OPTIONS, MAX_CLUSTERS, heading, bodyText, labelMono } from '@/lib/dmi-theme';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, LineChart, Line } from 'recharts';
-import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen, MapPin, RotateCcw, Settings, FileDown, FileText, Printer } from 'lucide-react';
+import { Loader2, Play, LayoutDashboard, ClipboardList, Network, BarChart3, ChevronDown, ChevronUp, Info, BookOpen, MapPin, RotateCcw, Settings, FileDown, FileText, Printer, Map } from 'lucide-react';
+import dynamic from 'next/dynamic';
+const BagPanel = dynamic(() => import('@/components/bag/BagPanel'), { ssr: false });
+const BagOsmDetails = dynamic(() => import('@/components/bag/BagOsmDetails'), { ssr: false });
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import FeedbackButton from '@/components/FeedbackButton';
@@ -19,7 +22,7 @@ import type { TutorialState } from '@/lib/use-tutorial';
 import TutorialOverlay from '@/components/TutorialOverlay';
 import { GraduationCap } from 'lucide-react';
 
-type WebappTab = 'cover' | 'handleiding' | 'dashboard' | 'invoer' | 'parameters' | 'clustering' | 'resultaten';
+type WebappTab = 'cover' | 'handleiding' | 'dashboard' | 'invoer' | 'bag' | 'parameters' | 'clustering' | 'resultaten';
 type HandleidingSubTab = 'handleiding' | 'casus';
 
 const TICK_STYLE = { fontFamily: 'var(--font-ibm-plex-sans), sans-serif', fill: DMI.darkGray } as const;
@@ -227,6 +230,7 @@ export default function WebappLayout({
     { id: 'handleiding', label: 'Handleiding', icon: <BookOpen size={18} /> },
     { id: 'dashboard', label: 'Cockpit', icon: <LayoutDashboard size={18} /> },
     { id: 'invoer', label: 'Invoer', icon: <ClipboardList size={18} /> },
+    { id: 'bag', label: 'BAG-gebied', icon: <Map size={18} /> },
     { id: 'parameters', label: 'Parameters', icon: <Settings size={18} /> },
     { id: 'clustering', label: 'Clustering', icon: <Network size={18} /> },
     { id: 'resultaten', label: 'Resultaten', icon: <BarChart3 size={18} /> },
@@ -972,7 +976,19 @@ export default function WebappLayout({
                     bepalen het verwachte verkeer en de bijbehorende ruimtebehoefte.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => setActiveTab('bag')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '8px 14px', borderRadius: '6px', border: `1px solid ${DMI.darkBlue}`,
+                      backgroundColor: DMI.darkBlue, color: DMI.white,
+                      fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                      fontWeight: 500, fontSize: '0.8rem', cursor: 'pointer',
+                    }}
+                  >
+                    <Map size={14} /> BAG-gebied inladen
+                  </button>
                   <button
                     data-tutorial="preset-gerard"
                     onClick={state.resetToGerardDoustraat}
@@ -1293,6 +1309,29 @@ export default function WebappLayout({
                   </div>
                 </WCard>
               )}
+            </div>
+          )}
+
+          {/* ---------------------------------------------------------- */}
+          {/*  BAG-GEBIED TAB                                             */}
+          {/* ---------------------------------------------------------- */}
+          {activeTab === 'bag' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <h1 style={{ ...heading, fontSize: isMobile ? '1.2rem' : '1.5rem', marginBottom: '8px' }}>
+                  BAG-gebied inladen
+                </h1>
+                <p style={{ ...bodyText, fontSize: '0.9rem', maxWidth: '760px', lineHeight: 1.6 }}>
+                  Zoek een straat of teken een gebied op de kaart. Klik op <strong>BAG ophalen</strong> om
+                  verblijfsobjecten uit de PDOK BAG-service binnen het geselecteerde gebied te tellen.
+                  Met <strong>Overnemen</strong> worden aantallen en oppervlakten direct toegepast op de Invoer-tab.
+                </p>
+              </div>
+              <BagPanel
+                panelHeight="calc(100vh - 220px)"
+                onApplied={() => setActiveTab('invoer')}
+              />
+              <BagOsmDetails />
             </div>
           )}
 

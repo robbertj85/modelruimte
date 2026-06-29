@@ -25,6 +25,7 @@ import {
   type FunctionDef,
   type DistributionDef,
 } from '@/lib/simulation';
+import type { BagApplyPlan } from '@/lib/bag-types';
 
 export type LayoutType = 'dmi' | 'webapp';
 
@@ -95,6 +96,7 @@ export interface SimulationState {
   handleCustomVehicleNameChange: (vehicleId: string, name: string) => void;
   handleCustomDistributionNameChange: (distId: string, name: string) => void;
   handleEnsureProfile: (profileKey: string, numVehicles: number) => void;
+  handleApplyBagPlan: (plan: BagApplyPlan) => void;
 }
 
 function getUniqueClusterIds(assignments: Record<string, number>): number[] {
@@ -552,6 +554,13 @@ export function useSimulationState(): SimulationState {
     setCustomDistributions((prev) => prev.map((d) => (d.id === distId ? { ...d, name } : d)));
   }, []);
 
+  const handleApplyBagPlan = useCallback((plan: BagApplyPlan) => {
+    setFunctionCounts((prev) => ({ ...prev, ...plan.functionCounts }));
+    setFunctionBvo((prev) => ({ ...prev, ...plan.functionBvo }));
+    setFunctionInputMode((prev) => ({ ...prev, ...plan.functionInputMode }));
+    setBvoPerUnit((prev) => ({ ...prev, ...plan.bvoPerUnit }));
+  }, []);
+
   const handleEnsureProfile = useCallback((profileKey: string, numVehicles: number) => {
     setDeliveryProfiles((prev) => {
       if (prev[profileKey]) return prev;
@@ -620,5 +629,6 @@ export function useSimulationState(): SimulationState {
     handleCustomVehicleNameChange,
     handleCustomDistributionNameChange,
     handleEnsureProfile,
+    handleApplyBagPlan,
   };
 }

@@ -8,7 +8,11 @@ import {
   ChevronUp,
   Play,
   Info,
+  Map as MapIcon,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+const BagPanel = dynamic(() => import('@/components/bag/BagPanel'), { ssr: false });
+const BagOsmDetails = dynamic(() => import('@/components/bag/BagOsmDetails'), { ssr: false });
 import {
   Tooltip,
   TooltipContent,
@@ -178,7 +182,7 @@ function EmptyState({ message }: { message: string }) {
 // Main Layout Component
 // ---------------------------------------------------------------------------
 
-type DmiNavMode = 'cockpit' | 'cover' | 'handleiding' | 'parameters';
+type DmiNavMode = 'cockpit' | 'cover' | 'handleiding' | 'parameters' | 'bag';
 type HandleidingSubTab = 'handleiding' | 'casus';
 
 export default function DmiCockpitLayout({
@@ -344,7 +348,7 @@ export default function DmiCockpitLayout({
                     margin: '4px 0 0 0',
                   }}
                 >
-                  {navMode === 'cockpit' ? 'Spreadsheet' : navMode === 'cover' ? 'Cover' : navMode === 'parameters' ? 'Parameters' : 'Handleiding'}
+                  {navMode === 'cockpit' ? 'Spreadsheet' : navMode === 'cover' ? 'Cover' : navMode === 'parameters' ? 'Parameters' : navMode === 'bag' ? 'BAG-gebied' : 'Handleiding'}
                 </p>
               </div>
               {isMobile && (
@@ -360,7 +364,7 @@ export default function DmiCockpitLayout({
             </div>
             {/* Nav buttons */}
             <div data-tutorial="nav-tabs" style={{ display: 'flex', gap: '4px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: isMobile ? '100%' : 'auto' }}>
-              {(['cover', 'handleiding', 'cockpit', 'parameters'] as DmiNavMode[]).map((mode) => (
+              {(['cover', 'handleiding', 'cockpit', 'bag', 'parameters'] as DmiNavMode[]).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setNavMode(mode)}
@@ -380,7 +384,7 @@ export default function DmiCockpitLayout({
                     flexShrink: 0,
                   }}
                 >
-                  {mode === 'cockpit' ? 'Spreadsheet' : mode}
+                  {mode === 'cockpit' ? 'Spreadsheet' : mode === 'bag' ? 'BAG-gebied' : mode}
                 </button>
               ))}
             </div>
@@ -854,6 +858,28 @@ export default function DmiCockpitLayout({
         )}
 
         {/* ================================================================
+            BAG-GEBIED VIEW
+        ================================================================ */}
+        {navMode === 'bag' && (
+          <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: '1400px', margin: '0 auto' }}>
+            <div style={{ marginBottom: 12 }}>
+              <h2 style={{ ...heading, fontSize: isMobile ? '1.1rem' : '1.3rem', margin: 0 }}>
+                BAG-gebied inladen
+              </h2>
+              <p style={{ ...bodyText, fontSize: 12, color: DMI.darkGray, margin: '4px 0 0', maxWidth: 760 }}>
+                Zoek een straat of teken een gebied. Klik BAG ophalen om de verblijfsobjecten uit PDOK BAG te tellen
+                en over te nemen in de spreadsheet.
+              </p>
+            </div>
+            <BagPanel
+              panelHeight="calc(100vh - 220px)"
+              onApplied={() => setNavMode('cockpit')}
+            />
+            <BagOsmDetails />
+          </div>
+        )}
+
+        {/* ================================================================
             PARAMETERS VIEW
         ================================================================ */}
         {navMode === 'parameters' && (
@@ -975,6 +1001,18 @@ export default function DmiCockpitLayout({
             <div data-tutorial="function-inputs">
             <Panel title="Inventarisatie Functies">
               <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setNavMode('bag')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '4px 10px', borderRadius: '4px', border: `1px solid ${DMI.darkBlue}`,
+                    backgroundColor: DMI.darkBlue, color: DMI.white,
+                    fontFamily: 'var(--font-ibm-plex-sans), sans-serif',
+                    fontWeight: 500, fontSize: '0.65rem', cursor: 'pointer',
+                  }}
+                >
+                  <MapIcon size={11} /> BAG-gebied
+                </button>
                 <button
                   data-tutorial="preset-gerard"
                   onClick={state.resetToGerardDoustraat}
